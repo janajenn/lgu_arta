@@ -1,0 +1,267 @@
+import { Head, Link, usePage, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+
+export default function DepartmentHeadLayout({ children, title = null }) {
+    const { auth } = usePage().props;
+    const user = auth.user;
+    const { url } = usePage();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const handleLogout = (e) => {
+        e.preventDefault();
+        router.post(route('logout'));
+    };
+
+    const isActive = (href) => {
+        if (!mounted) return false;
+        const currentPath = url.split('?')[0];
+        const itemPath = href.split('?')[0];
+        return currentPath === itemPath;
+    };
+
+    const navigation = [
+        { name: 'Dashboard', href: route('department-head.dashboard'), icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+        { name: 'Reports', href: '#', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+        { name: 'Analytics', href: route('department-head.analytics'), icon: 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z' },
+        { name: 'Departments', href: route('department-head.departments.index'), icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
+        // { name: 'Export Data', href: '#', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4' },
+        // { name: 'Team Members', href: '#', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13 0h.008v.008H20V16zm-3 0h.008v.008H17V16z' },
+        // { name: 'Settings', href: '#', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
+    ];
+
+    // Filter out Departments tab if user is not HR
+    const visibleNavigation = navigation.filter(item => {
+        if (item.name === 'Departments' && !user?.is_hr_department) {
+            return false;
+        }
+        return true;
+    });
+
+    // Add active state based on current URL
+    const navWithActive = visibleNavigation.map(item => ({
+        ...item,
+        current: isActive(item.href)
+    }));
+
+    const currentPage = title || navWithActive.find(item => item.current)?.name || 'Dashboard';
+    return (
+        <>
+            <Head title={`${currentPage} - Department Head`} />
+
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+                {/* Fixed Top Navigation Bar */}
+                <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-200/50 z-30 shadow-sm">
+                    <div className="px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between h-16">
+                            <div className="flex items-center">
+                                {/* Mobile sidebar toggle */}
+                                <button
+                                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                                    className="lg:hidden p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/50 transition-all duration-200"
+                                >
+                                    <span className="sr-only">Open sidebar</span>
+                                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg>
+                                </button>
+
+                                <div className="flex-shrink-0 flex items-center ml-2 lg:ml-0">
+                                    <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                                        <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
+                                    </div>
+                                    <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent ml-2">
+                                        ARTA Survey Monitor
+                                    </h1>
+                                </div>
+                            </div>
+
+                            {/* User Profile */}
+                            <div className="flex items-center space-x-4">
+                               
+                                <div className="relative">
+                                    <div className="flex items-center space-x-3">
+                                        
+                                        {auth.user.department_name && (
+                                            <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                {auth.user.department_name}
+                                            </span>
+                                        )}
+                                        
+                                        <button
+                                            onClick={handleLogout}
+                                            className="hidden md:flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100/50 rounded-lg transition-all duration-200"
+                                        >
+                                            <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                            </svg>
+                                            Logout
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                {/* Fixed Sidebar */}
+                <div className="hidden lg:block fixed left-0 top-16 bottom-0 w-64 bg-white/70 backdrop-blur-md border-r border-gray-200/50 z-20 shadow-xl">
+                    <div className="flex flex-col h-full">
+                        <div className="flex-1 overflow-y-auto pt-6 pb-4">
+                            <nav className="px-3 space-y-1">
+                                {navWithActive.map((item) => (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className={`group relative flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${item.current
+                                                ? 'bg-gradient-to-r from-blue-50 to-indigo-50/50 text-blue-700 shadow-sm'
+                                                : 'text-gray-600 hover:bg-gray-100/50 hover:text-gray-900'
+                                            }`}
+                                    >
+                                        {item.current && (
+                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-r-full" />
+                                        )}
+                                        <svg
+                                            className={`mr-3 h-5 w-5 transition-colors duration-200 ${item.current ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                                                }`}
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                                        </svg>
+                                        {item.name}
+                                    </Link>
+                                ))}
+                            </nav>
+                        </div>
+                        <div className="flex-shrink-0 border-t border-gray-200/50 p-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-sm">
+                                    <span className="text-xs font-semibold">{auth.user.name.charAt(0)}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-700 truncate">{auth.user.name}</p>
+                                    <p className="text-xs font-medium text-gray-500">Department Head</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile sidebar overlay */}
+                {sidebarOpen && (
+                    <div className="lg:hidden fixed inset-0 z-40 flex transition-opacity duration-300 ease-in-out">
+                        <div
+                            className="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity"
+                            onClick={() => setSidebarOpen(false)}
+                        />
+                        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white transform transition-transform duration-300 ease-in-out">
+                            <div className="absolute top-0 right-0 -mr-12 pt-2">
+                                <button
+                                    onClick={() => setSidebarOpen(false)}
+                                    className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                                >
+                                    <span className="sr-only">Close sidebar</span>
+                                    <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
+                                <div className="flex-shrink-0 flex items-center px-4 space-x-2">
+                                    <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                                        <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
+                                    </div>
+                                    <h1 className="text-xl font-bold text-gray-900">ARTA Survey</h1>
+                                </div>
+                                <nav className="mt-5 px-2 space-y-1">
+                                    {navWithActive.map((item) => (
+                                        <Link
+                                            key={item.name}
+                                            href={item.href}
+                                            className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${item.current
+                                                    ? 'bg-blue-50 text-blue-700'
+                                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                                }`}
+                                            onClick={() => setSidebarOpen(false)}
+                                        >
+                                            <svg
+                                                className={`mr-4 h-6 w-6 ${item.current ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                                                    }`}
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                                            </svg>
+                                            {item.name}
+                                        </Link>
+                                    ))}
+                                </nav>
+                            </div>
+                            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+                                <div className="flex items-center space-x-3">
+                                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-sm">
+                                        <span className="text-xs font-semibold">{auth.user.name.charAt(0)}</span>
+                                    </div>
+                                    <div>
+                                        <div className="text-base font-medium text-gray-800">{auth.user.name}</div>
+                                        <div className="text-sm font-medium text-gray-500">Department Head</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Main Content Area */}
+                <main className="pt-16 lg:ml-64 min-h-screen">
+                    <div className="py-8 px-4 sm:px-6 lg:px-8">
+                        <div className="max-w-7xl mx-auto">
+                            {/* Breadcrumb */}
+                            <div className="mb-8 animate-fade-in">
+                                <nav className="flex items-center space-x-2 text-sm text-gray-500">
+                                    <Link
+                                        href={route('department-head.dashboard')}
+                                        className="hover:text-gray-700 transition-colors duration-200"
+                                    >
+                                        Department Head
+                                    </Link>
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                    <span className="font-medium text-gray-700">{currentPage}</span>
+                                </nav>
+                            </div>
+
+                            {/* Content card */}
+                            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100/50 p-6 transition-all duration-300 hover:shadow-xl">
+                                {children}
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+
+            <style>{`
+                @keyframes fade-in {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in {
+                    animation: fade-in 0.5s ease-out;
+                }
+            `}</style>
+        </>
+    );
+}
