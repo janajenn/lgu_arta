@@ -8,6 +8,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\DepartmentHead\DashboardController as DepartmentHeadDashboardController;
 use App\Http\Controllers\DepartmentHead\DepartmentUserController;
+use App\Http\Controllers\PermaSurveyController;
+
 
 // Public department selection (landing page)
 Route::get('/', [App\Http\Controllers\Public\DepartmentController::class, 'index'])->name('public.departments');
@@ -21,6 +23,16 @@ Route::prefix('survey')->group(function () {
     Route::post('/', [SurveyController::class, 'store'])->name('survey.store');
     Route::post('/record-transaction', [SurveyController::class, 'recordTransaction'])->name('survey.record-transaction');
     Route::get('/thank-you', [SurveyController::class, 'thankYou'])->name('survey.thank-you');
+
+
+
+   // Add PERMA survey routes here (public)
+  // Add PERMA survey routes here (public)
+Route::get('/perma', [PermaSurveyController::class, 'create'])->name('survey.perma');     // ← Landing page
+Route::get('/perma/form', [PermaSurveyController::class, 'form'])->name('survey.perma.form'); // ← Actual form
+Route::post('/perma', [PermaSurveyController::class, 'store']);
+Route::get('/survey/perma/thankyou', [PermaSurveyController::class, 'thankyou'])->name('perma.thankyou');
+
 });
 
 // Guest routes (for non-authenticated users)
@@ -107,6 +119,9 @@ Route::get('/department-head/departments/{department}', [\App\Http\Controllers\D
 
     
     });
+
+
+
 
 
 
