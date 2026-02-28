@@ -1,70 +1,35 @@
 import { Head, Link } from '@inertiajs/react';
 import { BuildingOfficeIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 
-// Enhanced color themes with more sophisticated gradients and hover states
-const themes = [
-    {
-        topBar: 'from-blue-600 to-indigo-600',
-        iconBg: 'from-blue-500 to-indigo-500',
-        hoverText: 'group-hover:text-blue-600',
-        focusRing: 'ring-blue-500',
-        lightBg: 'bg-blue-50',
-        borderGlow: 'group-hover:border-blue-200',
-    },
-    {
-        topBar: 'from-emerald-600 to-teal-600',
-        iconBg: 'from-emerald-500 to-teal-500',
-        hoverText: 'group-hover:text-emerald-600',
-        focusRing: 'ring-emerald-500',
-        lightBg: 'bg-emerald-50',
-        borderGlow: 'group-hover:border-emerald-200',
-    },
-    {
-        topBar: 'from-violet-600 to-purple-600',
-        iconBg: 'from-violet-500 to-purple-500',
-        hoverText: 'group-hover:text-purple-600',
-        focusRing: 'ring-purple-500',
-        lightBg: 'bg-purple-50',
-        borderGlow: 'group-hover:border-purple-200',
-    },
-    {
-        topBar: 'from-amber-600 to-orange-600',
-        iconBg: 'from-amber-500 to-orange-500',
-        hoverText: 'group-hover:text-orange-600',
-        focusRing: 'ring-orange-500',
-        lightBg: 'bg-orange-50',
-        borderGlow: 'group-hover:border-orange-200',
-    },
-    {
-        topBar: 'from-rose-600 to-pink-600',
-        iconBg: 'from-rose-500 to-pink-500',
-        hoverText: 'group-hover:text-rose-600',
-        focusRing: 'ring-rose-500',
-        lightBg: 'bg-rose-50',
-        borderGlow: 'group-hover:border-rose-200',
-    },
-    {
-        topBar: 'from-cyan-600 to-sky-600',
-        iconBg: 'from-cyan-500 to-sky-500',
-        hoverText: 'group-hover:text-sky-600',
-        focusRing: 'ring-sky-500',
-        lightBg: 'bg-sky-50',
-        borderGlow: 'group-hover:border-sky-200',
-    },
-];
+// =============================================
+// BRAND COLORS – Replace with your logo's actual colors
+// =============================================
+const brand = {
+  primary: '#1e3a8a',
+  secondary: '#2563eb',
+  accent: '#f59e0b',
+  light: '#dbeafe',
+  gradientFrom: '#1e3a8a',
+  gradientTo: '#3b82f6',
+};
+
+// =============================================
+// LOGO PATHS – Use your actual filenames
+// =============================================
+const leftLogoSrc = '/images/hr.png';
+const rightLogoSrc = '/images/opol_logo.png';
+const usePlaceholder = false;
 
 export default function Departments({ departments }) {
     const [isLoaded, setIsLoaded] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredDepartments, setFilteredDepartments] = useState(departments);
 
-    // Staggered entrance animation
     useEffect(() => {
         setIsLoaded(true);
     }, []);
 
-    // Real-time filtering with debounce for performance
     useEffect(() => {
         const timer = setTimeout(() => {
             const filtered = departments.filter(dept =>
@@ -72,8 +37,7 @@ export default function Departments({ departments }) {
                 (dept.description && dept.description.toLowerCase().includes(searchTerm.toLowerCase()))
             );
             setFilteredDepartments(filtered);
-        }, 300); // Debounce for smooth typing
-
+        }, 300);
         return () => clearTimeout(timer);
     }, [searchTerm, departments]);
 
@@ -81,197 +45,236 @@ export default function Departments({ departments }) {
 
     return (
         <>
-            <Head title="Select Department" />
+            <Head title="Welcome to Opol Feedback Portal" />
 
-            {/* Refined hero section with floating elements and deeper gradient */}
-            <div className="relative bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 py-20 sm:py-28 overflow-hidden isolate">
-                {/* Animated orbs with softer colors and more movement */}
-                <div className="absolute inset-0 opacity-30">
-                    <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl animate-float-slow"></div>
-                    <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl animate-float-slower animation-delay-2000"></div>
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl animate-pulse-glow"></div>
-                </div>
-
-                {/* Improved noise texture */}
-                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.3'/%3E%3C/svg%3E")` }}></div>
-
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
-                        Service Feedback Portal
-                    </h1>
-                    <p className="text-xl sm:text-2xl text-indigo-100 max-w-3xl mx-auto font-light leading-relaxed drop-shadow">
-                        Please select the department you visited to share your experience. Your feedback helps us serve you better.
-                    </p>
-                </div>
-            </div>
-
-            {/* Main content area with search and department count */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-                {/* Search and filter bar with glassmorphism effect */}
-                <div className="mb-12 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-                            All Departments
-                        </h2>
-                        <span className="px-3 py-1 text-sm font-medium bg-indigo-100 text-indigo-800 rounded-full">
-                            {filteredDepartments.length} {filteredDepartments.length === 1 ? 'department' : 'departments'}
-                        </span>
+            {/* Main wrapper with hexagon pattern background */}
+            <div className="relative"
+style={{
+    backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='double' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 0 0 L 100 0' stroke='%23999999' stroke-width='0.8' stroke-opacity='0.06' /%3E%3Cpath d='M 0 2 L 100 2' stroke='%23999999' stroke-width='0.8' stroke-opacity='0.06' /%3E%3Cpath d='M 0 0 L 0 100' stroke='%23999999' stroke-width='0.8' stroke-opacity='0.06' /%3E%3Cpath d='M 2 0 L 2 100' stroke='%23999999' stroke-width='0.8' stroke-opacity='0.09' /%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23double)' /%3E%3C/svg%3E")`,
+    backgroundRepeat: 'repeat',
+  }}
+            >
+                {/* Hero Section – No background color, only hexagon */}
+                <section className="relative min-h-screen flex items-center justify-center overflow-hidden text-center px-4 isolate">
+                    {/* Layer 2: Logos (above hexagon) */}
+                    <div className="absolute inset-0 pointer-events-none z-10">
+                        {/* Left Logo */}
+                        <div className="absolute left-0 top-0 h-full"
+                             style={{ width: '130%', left: '-65%', zIndex: 2 }}>
+                            {usePlaceholder ? (
+                                <div className="w-full h-full bg-white/20 rounded-full border-2 border-white/30"></div>
+                            ) : (
+                                <img
+                                    src={leftLogoSrc}
+                                    alt=""
+                                    className="w-full h-full object-contain opacity-20 blur-sm"
+                                />
+                            )}
+                        </div>
+                        {/* Right Logo */}
+                        <div className="absolute right-0 top-0 h-full"
+                             style={{ width: '120%', right: '-60%', zIndex: 2 }}>
+                            {usePlaceholder ? (
+                                <div className="w-full h-full bg-white/20 rounded-full border-2 border-white/30"></div>
+                            ) : (
+                                <img
+                                    src={rightLogoSrc}
+                                    alt=""
+                                    className="w-full h-full object-contain opacity-20 blur-sm"
+                                />
+                            )}
+                        </div>
                     </div>
 
-                    {/* Search input with icon and clear button */}
-                    <div className="relative w-full sm:w-80">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                    
+
+                    {/* Noise texture */}
+                    <div className="absolute inset-0 opacity-10 z-0" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.3'/%3E%3C/svg%3E")` }}></div>
+
+                    {/* Layer 3: Content (top) – with glass background for readability */}
+<div className="relative z-20 max-w-3xl mx-auto w-full bg-white/10 backdrop-blur-md rounded-3xl p-4 sm:p-6 md:p-8 border border-white/20 shadow-2xl">
+    {/* Rounded Badge / Municipality Name */}
+    <div className="mb-4 sm:mb-6 inline-block bg-white/20 backdrop-blur-md px-4 py-2 sm:px-6 sm:py-3 rounded-full border border-white/30 shadow-lg">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-black tracking-wider">
+            MUNICIPALITY OF OPOL
+        </h2>
+        <p className="text-black/90 text-[10px] sm:text-xs mt-0.5">Province of Misamis Oriental</p>
+    </div>
+
+    <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-black mb-3 sm:mb-4 tracking-tight drop-shadow-2xl animate-fade-in">
+        Share Your Feedback
+    </h1>
+
+    {/* H4 with CSR explanation */}
+    <div className="mb-4 sm:mb-6">
+        <h4 className="text-xl sm:text-2xl md:text-3xl font-bold text-black flex items-center justify-center gap-2">
+            <span>Customer Satisfaction Rating</span>
+        </h4>
+        <p className="text-black/90 text-sm sm:text-base md:text-xl max-w-2xl mx-auto mt-1 sm:mt-2">
+            Your ratings directly influence how we improve our services. Every score matters.
+        </p>
+    </div>
+
+    {/* Search Bar */}
+    <div className="relative max-w-xl mx-auto mb-4 sm:mb-6 animate-fade-in animation-delay-600">
+        <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+            <MagnifyingGlassIcon className="h-4 sm:h-5 w-4 sm:w-5 text-black-400" />
+        </div>
+        <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Find a department..."
+            className="block w-full pl-9 sm:pl-12 pr-9 sm:pr-12 py-3 sm:py-4 text-sm sm:text-base border border-black/30 rounded-full bg-white/20 backdrop-blur-md text-black placeholder-black/70 shadow-xl focus:ring-4 focus:ring-black/30 focus:border-transparent transition-all"
+        />
+        {searchTerm && (
+            <button
+                onClick={clearSearch}
+                className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center text-white/70 hover:text-black"
+            >
+                <XMarkIcon className="h-4 sm:h-5 w-4 sm:w-5" />
+            </button>
+        )}
+    </div>
+
+
+                        {/* Department Count */}
+                        <p className="text-black/90 text-sm animate-fade-in animation-delay-900">
+                            {filteredDepartments.length} {filteredDepartments.length === 1 ? 'department' : 'departments'} available
+                        </p>
+                    </div>
+
+                    {/* Scroll indicator (optional) */}
+                    <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
+                        <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                    </div>
+                </section>
+
+                {/* Departments Section – No background color, fully transparent */}
+                <section className="py-24">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Departments</h2>
+                            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                                Select a department to provide your valuable feedback. We're here to listen and improve.
+                            </p>
+                            <span className="mt-4 inline-block px-6 py-2 text-base font-medium rounded-full"
+                                  style={{ backgroundColor: brand.light, color: brand.primary }}>
+                                {filteredDepartments.length} {filteredDepartments.length === 1 ? 'department' : 'departments'} available
+                            </span>
                         </div>
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search departments..."
-                            className="block w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                            aria-label="Search departments"
-                        />
-                        {searchTerm && (
-                            <button
-                                onClick={clearSearch}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                                aria-label="Clear search"
-                            >
-                                <XMarkIcon className="h-5 w-5" />
-                            </button>
+
+                        {filteredDepartments.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                                {filteredDepartments.map((dept, index) => {
+                                    const delay = index * 100;
+                                    return (
+                                        <Link
+                                            key={dept.id}
+                                            href={route('public.department.show', dept.id)}
+                                            className={`group relative bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                                                isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                                            } transition-all duration-700 ease-out`}
+                                            style={{ transitionDelay: `${delay}ms` }}
+                                        >
+                                            {/* Gradient accent bar */}
+                                            <div className="absolute top-0 left-0 w-full h-2 group-hover:h-3 transition-all duration-300"
+                                                 style={{ background: `linear-gradient(to right, ${brand.primary}, ${brand.secondary})` }}></div>
+                                            <div className="p-8 text-center">
+                                                <div className="mb-6">
+                                                    {dept.logo ? (
+                                                        <img
+                                                            src={dept.logo}
+                                                            alt={dept.name}
+                                                            className="w-20 h-20 mx-auto rounded-full object-contain bg-white shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
+                                                             style={{ background: `linear-gradient(135deg, ${brand.primary}, ${brand.secondary})` }}>
+                                                            <BuildingOfficeIcon className="w-10 h-10 text-white" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <h3 className="text-2xl font-bold text-gray-900 mb-3 transition-colors"
+                                                    onMouseEnter={(e) => e.currentTarget.style.color = brand.primary}
+                                                    onMouseLeave={(e) => e.currentTarget.style.color = 'inherit'}>
+                                                    {dept.name}
+                                                </h3>
+                                                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                                                    {dept.description || 'Dedicated to providing exceptional services.'}
+                                                </p>
+                                                <div className="flex justify-center items-center text-sm text-gray-500 mb-6">
+                                                    <span className="inline-block w-2 h-2 rounded-full mr-2 animate-pulse"
+                                                          style={{ backgroundColor: brand.light }}></span>
+                                                    {dept.services_count} service{dept.services_count !== 1 ? 's' : ''}
+                                                </div>
+                                                <div className="flex justify-center">
+                                                    <span className="px-6 py-3 text-white rounded-full text-sm font-medium group-hover:scale-105 transition-transform shadow-md hover:shadow-lg"
+                                                          style={{ background: `linear-gradient(to right, ${brand.primary}, ${brand.secondary})` }}>
+                                                        Select & Feedback
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {/* Background glow */}
+                                            <div className="absolute inset-0 -z-10 opacity-0 group-hover:opacity-10 transition-opacity duration-500 blur-2xl"
+                                                 style={{ background: `linear-gradient(to bottom, ${brand.primary}, ${brand.secondary})` }}></div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center py-20 bg-white/80 backdrop-blur-sm rounded-3xl">
+                                <BuildingOfficeIcon className="mx-auto h-24 w-24 text-gray-300 animate-float-slow mb-6" />
+                                <h3 className="text-2xl font-semibold text-gray-900 mb-2">No Departments Found</h3>
+                                <p className="text-gray-600 text-lg max-w-md mx-auto mb-6">
+                                    {searchTerm ? `No results for "${searchTerm}". Try another search.` : 'Departments coming soon. Check back later!'}
+                                </p>
+                                {searchTerm && (
+                                    <button
+                                        onClick={clearSearch}
+                                        className="px-8 py-4 text-white rounded-full hover:opacity-90 transition-all shadow-lg"
+                                        style={{ backgroundColor: brand.primary }}
+                                    >
+                                        Reset Search
+                                    </button>
+                                )}
+                            </div>
                         )}
                     </div>
-                </div>
- {/* Department grid – conditional rendering fixed */}
- {filteredDepartments.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {filteredDepartments.map((dept, index) => {
-                        const theme = themes[index % themes.length];
-                        const delay = index * 100;
-                        return (
-                            <Link
-                                key={dept.id}
-                                href={route('public.department.show', dept.id)}
-                                className={`group relative bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100 ${theme.borderGlow} focus:outline-none focus:ring-2 ${theme.focusRing} focus:ring-offset-2 ${
-                                    isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                                } transition-all duration-700 ease-out`}
-                                style={{ transitionDelay: `${delay}ms` }}
-                            >
-                                {/* Top bar */}
-                                <div className={`h-2 bg-gradient-to-r ${theme.topBar} group-hover:opacity-90 transition-opacity`}></div>
+                </section>
 
-                                <div className="p-8">
-                                    <div className="flex items-start space-x-5">
-                                        {/* Logo or fallback icon */}
-                                        <div className="flex-shrink-0">
-                                            {dept.logo ? (
-                                                <img
-                                                    src={dept.logo}
-                                                    alt={dept.name}
-                                                    className="w-14 h-14 rounded-xl object-contain bg-white shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
-                                                />
-                                            ) : (
-                                                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${theme.iconBg} flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}>
-                                                    <BuildingOfficeIcon className="w-7 h-7 text-white" />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Text content */}
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className={`text-xl font-bold text-gray-900 ${theme.hoverText} transition-colors truncate`}>
-                                                {dept.name}
-                                            </h3>
-                                            <p className="mt-2 text-sm text-gray-500 flex items-center">
-                                                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                                                {dept.services_count} service{dept.services_count !== 1 ? 's' : ''}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Description */}
-                                    {dept.description && (
-                                        <div className="mt-5 relative">
-                                            <p className="text-gray-600 line-clamp-2 text-sm leading-relaxed">
-                                                {dept.description}
-                                            </p>
-                                            <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
-                                        </div>
-                                    )}
-
-                                    {/* Call to action */}
-                                    <div className="mt-6 flex justify-end items-center space-x-2">
-                                        <span className={`text-sm font-medium text-gray-400 ${theme.hoverText} transition-colors`}>
-                                            Select department
-                                        </span>
-                                        <svg
-                                            className={`w-5 h-5 text-gray-400 ${theme.hoverText} group-hover:translate-x-2 transition-all duration-300`}
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                        </svg>
-                                    </div>
-                                </div>
-
-                                {/* Glow effect */}
-                                <div className={`absolute inset-0 -z-10 bg-gradient-to-br ${theme.iconBg} opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-2xl blur-2xl`}></div>
-                            </Link>
-                        );
-                    })}
-                </div>
-            ) : (
-                // Empty state
-                <div className="text-center py-20 bg-white/50 backdrop-blur-sm rounded-3xl border border-gray-100 shadow-inner">
-                    <BuildingOfficeIcon className="mx-auto h-24 w-24 text-gray-300 animate-float-slow" />
-                    <h3 className="mt-6 text-2xl font-semibold text-gray-900">No departments found</h3>
-                    <p className="mt-2 text-gray-500 text-lg max-w-md mx-auto">
-                        {searchTerm ? `No departments matching "${searchTerm}"` : 'Please check back later or contact support.'}
-                    </p>
-                    {searchTerm && (
-                        <button
-                            onClick={clearSearch}
-                            className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Clear search
-                        </button>
-                    )}
-                </div>
-            )}
-        </div>
-            {/* Polished footer with gradient line */}
-            <footer className="border-t border-gray-200 bg-white/80 backdrop-blur-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                        <p className="flex items-center gap-1">
-                            Developed with <span className="text-red-500 animate-heartbeat">❤</span> by{' '}
-                            <span className="font-semibold text-gray-700 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">HRMO Interns</span>
+                {/* Footer with glass effect */}
+                <footer className="py-8 bg-white/10 backdrop-blur-md border-t border-white/20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                        <p className="text-black/90 text-lg mb-2">
+                            Developed with <span className="animate-heartbeat" style={{ color: brand.accent }}>❤️</span> by the HRMO Team
                         </p>
-                        <p className="mt-2 md:mt-0">
-                            © {new Date().getFullYear()} All rights reserved.
+                        <p className="text-white/70 text-sm">
+                            © {new Date().getFullYear()} Municipality of Opol. All rights reserved.
                         </p>
                     </div>
-                </div>
-            </footer>
+                </footer>
+            </div>
 
-            {/* Enhanced custom animations */}
+            {/* Custom Animations */}
             <style jsx>{`
+                @keyframes fade-in {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
                 @keyframes float-slow {
-                    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-                    25% { transform: translate(5%, 5%) scale(1.05); opacity: 0.4; }
-                    50% { transform: translate(10%, -5%) scale(1.1); opacity: 0.5; }
-                    75% { transform: translate(-5%, -10%) scale(1.05); opacity: 0.4; }
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-20px); }
                 }
                 @keyframes float-slower {
-                    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-                    25% { transform: translate(-5%, -5%) scale(1.05); opacity: 0.4; }
-                    50% { transform: translate(-10%, 5%) scale(1.1); opacity: 0.5; }
-                    75% { transform: translate(5%, 10%) scale(1.05); opacity: 0.4; }
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(20px); }
                 }
                 @keyframes pulse-glow {
-                    0%, 100% { opacity: 0.2; transform: scale(1); }
-                    50% { opacity: 0.4; transform: scale(1.2); }
+                    0%, 100% { opacity: 0.3; transform: scale(1); }
+                    50% { opacity: 0.6; transform: scale(1.1); }
                 }
                 @keyframes heartbeat {
                     0%, 100% { transform: scale(1); }
@@ -279,21 +282,20 @@ export default function Departments({ departments }) {
                     50% { transform: scale(1); }
                     75% { transform: scale(1.1); }
                 }
-                .animate-float-slow {
-                    animation: float-slow 12s ease-in-out infinite;
+                @keyframes bounce {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
                 }
-                .animate-float-slower {
-                    animation: float-slower 16s ease-in-out infinite;
-                }
-                .animate-pulse-glow {
-                    animation: pulse-glow 8s ease-in-out infinite;
-                }
-                .animate-heartbeat {
-                    animation: heartbeat 1.5s ease-in-out infinite;
-                }
-                .animation-delay-2000 {
-                    animation-delay: 2s;
-                }
+                .animate-fade-in { animation: fade-in 1s ease-out forwards; }
+                .animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
+                .animate-float-slower { animation: float-slower 12s ease-in-out infinite; }
+                .animate-pulse-glow { animation: pulse-glow 5s ease-in-out infinite; }
+                .animate-heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
+                .animate-bounce { animation: bounce 2s ease-in-out infinite; }
+                .animation-delay-300 { animation-delay: 0.3s; }
+                .animation-delay-600 { animation-delay: 0.6s; }
+                .animation-delay-900 { animation-delay: 0.9s; }
+                .animation-delay-2000 { animation-delay: 2s; }
             `}</style>
         </>
     );

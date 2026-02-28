@@ -85,11 +85,11 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
 
     // Response Options for SQD questions
     const responseOptions = isBisaya ? [
-        { value: 'Kusog kaayo nga Dili Mouyon', label: 'Kusog kaayo nga Dili Mouyon', short: 'KDM' },
+        { value: 'Dili gyud Kaayo Mouyon', label: 'Dili gyud Kaayo Mouyon', short: 'DKM' },
         { value: 'Dili Mouyon', label: 'Dili Mouyon', short: 'DM' },
         { value: 'Wala Mouyon o Dili Mouyon', label: 'Wala Mouyon o Dili Mouyon', short: 'WM/DM' },
         { value: 'Mouyon', label: 'Mouyon', short: 'M' },
-        { value: 'Kusog kaayo nga Mouyon', label: 'Kusog kaayo nga Mouyon', short: 'KM' },
+        { value: 'Mouyon gyud Kaayo', label: 'Mouyon gyud Kaayo', short: 'MK' },
         { value: 'N/A (Dili Aplikable)', label: 'N/A (Dili Aplikable)', short: 'N/A' }
     ] : [
         { value: 'Strongly Disagree', label: 'Strongly Disagree', short: 'SD' },
@@ -99,6 +99,10 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
         { value: 'Strongly Agree', label: 'Strongly Agree', short: 'SA' },
         { value: 'N/A (Not Applicable)', label: 'N/A (Not Applicable)', short: 'N/A' }
     ];
+
+   
+
+        
 
     // Bisaya Translations
     const translations = {
@@ -149,11 +153,11 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
 
         // Table headers
         'statement': 'Pahayag',
-        'strongly_disagree': 'Kusog kaayo nga Dili Mouyon',
+        'strongly_disagree': 'Dili gyud kaayo Mouyon',
         'disagree': 'Dili Mouyon',
         'neutral': 'Wala Mouyon o Dili Mouyon',
         'agree': 'Mouyon',
-        'strongly_agree': 'Kusog kaayo nga Mouyon',
+        'strongly_agree': ' Mouyon gyud Kaayo',
         'not_applicable': 'N/A (Dili Aplikable)',
 
         // Radio button labels
@@ -236,10 +240,22 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
 
     const t = isBisaya ? translations : english;
 
+    // ✅ 3. Define translateServiceName AFTER t (optional, but must be after translations)
+    const translateServiceName = (serviceName) => {
+        return translations[serviceName] || serviceName;
+    };
+
+
+   
+
+   
+
 
     console.log('SurveyCreate – service prop:', service);
 console.log('SurveyCreate – department prop:', department);
 console.log('Initial service_availed:', initialService);
+
+
 
     return (
         <>
@@ -627,13 +643,15 @@ console.log('Initial service_availed:', initialService);
           {t.statement}
         </th>
         {responseOptions.map((option) => (
-          <th key={option.value} className="px-3 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
-            <div className="flex flex-col items-center">
-              <span className="hidden sm:block">{option.label}</span>
-              <span className="sm:hidden text-xs font-bold">{option.short}</span>
-            </div>
-          </th>
-        ))}
+  <th key={option.value} className="px-3 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+    <div className="flex flex-col items-center">
+      {/* Full label: hidden on small and medium, visible on large+ */}
+      <span className="hidden lg:block">{option.label}</span>
+      {/* Short code: visible on small and medium, hidden on large+ */}
+      <span className="lg:hidden text-xs font-bold">{option.short}</span>
+    </div>
+  </th>
+))}
       </tr>
     </thead>
     <tbody className="bg-white divide-y divide-gray-200">
@@ -649,19 +667,21 @@ console.log('Initial service_availed:', initialService);
             </div>
           </td>
           {responseOptions.map((option) => (
-            <td key={`${question.custom_id}-${option.value}`} className="px-3 py-4 text-center">
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  name={`question_${question.custom_id}`}
-                  value={option.value}
-                  checked={data.responses[question.custom_id] === option.value}
-                  onChange={() => handleResponseChange(question.custom_id, option.value)}
-                  className="h-5 w-5 text-red-600 border-gray-300 focus:ring-red-500 focus:ring-2 transition-all duration-300"
-                />
-                <span className="ml-2 sm:hidden text-xs font-medium">{option.short}</span>
-              </label>
-            </td>
+          <td key={`${question.custom_id}-${option.value}`} className="px-3 py-4 text-center">
+          <label className="inline-flex items-center cursor-pointer group p-1 rounded-lg transition-colors duration-200 group-hover:bg-red-50">
+            <input
+              type="radio"
+              name={`question_${question.custom_id}`}
+              value={option.value}
+              checked={data.responses[question.custom_id] === option.value}
+              onChange={() => handleResponseChange(question.custom_id, option.value)}
+              className="h-4 w-4 md:h-5 md:w-5 border-2 border-gray-400 text-red-600 focus:ring-red-500 focus:ring-2 transition-all duration-300 checked:border-red-600 group-hover:border-red-400"
+            />
+            <span className="ml-2 lg:hidden text-xs font-medium text-gray-700">
+              {option.short}
+            </span>
+          </label>
+        </td>
           ))}
         </tr>
       ))}

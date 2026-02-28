@@ -1,5 +1,15 @@
 import { useForm, usePage } from '@inertiajs/react';
-import { BuildingOfficeIcon, UserIcon, EnvelopeIcon, KeyIcon, PlusIcon, TrashIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import {
+    BuildingOfficeIcon,
+    UserIcon,
+    EnvelopeIcon,
+    KeyIcon,
+    PlusIcon,
+    TrashIcon,
+    EyeIcon,
+    EyeSlashIcon,
+    CloudArrowUpIcon,
+} from '@heroicons/react/24/outline';
 import DepartmentHeadLayout from '../../Shared/Layouts/DepartmentHeadLayout';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
@@ -9,7 +19,7 @@ export default function CreateDepartment() {
     const { data, setData, post, processing, errors, reset } = useForm({
         department_name: '',
         department_description: '',
-        logo: null,                 // ← new field for file
+        logo: null,
         user_name: '',
         user_email: '',
         user_password: '',
@@ -57,7 +67,7 @@ export default function CreateDepartment() {
     const submit = (e) => {
         e.preventDefault();
         post(route('department-head.departments.store'), {
-            forceFormData: true,     // ← required for file upload
+            forceFormData: true,
             onSuccess: () => {
                 reset();
                 setLogoPreview(null);
@@ -83,215 +93,296 @@ export default function CreateDepartment() {
 
     return (
         <DepartmentHeadLayout title="Create Department">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Header */}
+                <div className="mb-8">
+                    <h2 className="text-3xl font-bold text-gray-900">Create New Department</h2>
+                    <p className="mt-2 text-gray-600">
+                        Fill in the details below to register a new department, assign a department head, and list the services offered.
+                    </p>
+                </div>
+
                 <form onSubmit={submit} className="space-y-8">
-                    {/* Department Section */}
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-                            <BuildingOfficeIcon className="h-5 w-5 mr-2 text-blue-600" />
-                            Department Information
-                        </h3>
-                        <div className="grid grid-cols-1 gap-4">
+                    {/* Department Information Card */}
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                            <h3 className="text-lg font-semibold text-white flex items-center">
+                                <BuildingOfficeIcon className="h-5 w-5 mr-2" />
+                                Department Information
+                            </h3>
+                        </div>
+                        <div className="p-6 space-y-5">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Department Name</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Department Name <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="text"
                                     value={data.department_name}
                                     onChange={e => setData('department_name', e.target.value)}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                                     placeholder="e.g., Human Resources"
                                 />
-                                {errors.department_name && <p className="mt-1 text-sm text-red-600">{errors.department_name}</p>}
+                                {errors.department_name && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.department_name}</p>
+                                )}
                             </div>
+
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Description <span className="text-gray-400">(optional)</span>
+                                </label>
                                 <textarea
                                     value={data.department_description}
                                     onChange={e => setData('department_description', e.target.value)}
                                     rows="3"
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                                     placeholder="Brief description of the department's function..."
                                 />
-                                {errors.department_description && <p className="mt-1 text-sm text-red-600">{errors.department_description}</p>}
+                                {errors.department_description && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.department_description}</p>
+                                )}
                             </div>
 
-                            {/* Logo upload */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Department Logo (PNG only, required)</label>
-                                <input
-                                    type="file"
-                                    accept="image/png"
-                                    onChange={handleLogoChange}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                                {logoPreview && (
-                                    <div className="mt-2">
-                                        <img src={logoPreview} alt="Logo preview" className="h-20 w-20 object-contain border rounded" />
-                                    </div>
-                                )}
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Department Logo <span className="text-red-500">*</span> <span className="text-gray-400">(PNG only)</span>
+                                </label>
+                                <div className="flex items-center space-x-4">
+                                    <label className="flex-1 cursor-pointer">
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                accept="image/png"
+                                                onChange={handleLogoChange}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            />
+                                            <div className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-500 flex items-center justify-between">
+                                                <span className="truncate">
+                                                    {data.logo ? data.logo.name : 'Choose a PNG file...'}
+                                                </span>
+                                                <CloudArrowUpIcon className="h-5 w-5 text-gray-400" />
+                                            </div>
+                                        </div>
+                                    </label>
+                                    {logoPreview && (
+                                        <div className="flex-shrink-0">
+                                            <img
+                                                src={logoPreview}
+                                                alt="Logo preview"
+                                                className="h-16 w-16 object-contain border rounded-lg"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                                 {errors.logo && <p className="mt-1 text-sm text-red-600">{errors.logo}</p>}
                             </div>
                         </div>
                     </div>
 
-                    {/* User Section (Department Head) - unchanged */}
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-                            <UserIcon className="h-5 w-5 mr-2 text-blue-600" />
-                            Department Head Account
-                        </h3>
-                        <div className="grid grid-cols-1 gap-4">
+                    {/* Department Head Account Card */}
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                            <h3 className="text-lg font-semibold text-white flex items-center">
+                                <UserIcon className="h-5 w-5 mr-2" />
+                                Department Head Account
+                            </h3>
+                        </div>
+                        <div className="p-6 space-y-5">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Full Name <span className="text-red-500">*</span>
+                                </label>
                                 <div className="relative">
                                     <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                                     <input
                                         type="text"
                                         value={data.user_name}
                                         onChange={e => setData('user_name', e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                                         placeholder="John Doe"
                                     />
                                 </div>
                                 {errors.user_name && <p className="mt-1 text-sm text-red-600">{errors.user_name}</p>}
                             </div>
+
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Email Address <span className="text-red-500">*</span>
+                                </label>
                                 <div className="relative">
                                     <EnvelopeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                                     <input
                                         type="email"
                                         value={data.user_email}
                                         onChange={e => setData('user_email', e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                                         placeholder="head@example.com"
                                     />
                                 </div>
                                 {errors.user_email && <p className="mt-1 text-sm text-red-600">{errors.user_email}</p>}
                             </div>
 
-                            {/* Password field with show/hide */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                <div className="relative">
-                                    <KeyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        value={data.user_password}
-                                        onChange={e => setData('user_password', e.target.value)}
-                                        className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="••••••••"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                    >
-                                        {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-                                    </button>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Password <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <KeyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                        <input
+                                            type={showPassword ? 'text' : 'password'}
+                                            value={data.user_password}
+                                            onChange={e => setData('user_password', e.target.value)}
+                                            className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                                            placeholder="••••••••"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                        >
+                                            {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                                        </button>
+                                    </div>
+                                    {errors.user_password && <p className="mt-1 text-sm text-red-600">{errors.user_password}</p>}
+                                    <p className="mt-1 text-xs text-gray-500">Minimum 8 characters, mixed case, numbers, and symbols recommended.</p>
                                 </div>
-                                {errors.user_password && <p className="mt-1 text-sm text-red-600">{errors.user_password}</p>}
-                                <p className="mt-1 text-xs text-gray-500">Minimum 8 characters, mixed case, numbers, and symbols recommended.</p>
-                            </div>
 
-                            {/* Confirm Password field with show/hide */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                                <div className="relative">
-                                    <KeyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                    <input
-                                        type={showConfirmPassword ? 'text' : 'password'}
-                                        value={data.user_password_confirmation}
-                                        onChange={e => setData('user_password_confirmation', e.target.value)}
-                                        className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="••••••••"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                    >
-                                        {showConfirmPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-                                    </button>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Confirm Password <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <KeyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                        <input
+                                            type={showConfirmPassword ? 'text' : 'password'}
+                                            value={data.user_password_confirmation}
+                                            onChange={e => setData('user_password_confirmation', e.target.value)}
+                                            className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                                            placeholder="••••••••"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                        >
+                                            {showConfirmPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                                        </button>
+                                    </div>
+                                    {errors.user_password_confirmation && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.user_password_confirmation}</p>
+                                    )}
                                 </div>
-                                {errors.user_password_confirmation && <p className="mt-1 text-sm text-red-600">{errors.user_password_confirmation}</p>}
                             </div>
                         </div>
                     </div>
 
-                    {/* Services Section - unchanged */}
-                    <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-700 flex items-center">
-                                <BuildingOfficeIcon className="h-5 w-5 mr-2 text-blue-600" />
+                    {/* Services Card */}
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+                            <h3 className="text-lg font-semibold text-white flex items-center">
+                                <BuildingOfficeIcon className="h-5 w-5 mr-2" />
                                 Services Offered
                             </h3>
                             <button
                                 type="button"
                                 onClick={addService}
-                                className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                                className="inline-flex items-center px-3 py-1.5 bg-white text-blue-700 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium shadow-sm"
                             >
                                 <PlusIcon className="h-4 w-4 mr-1" />
                                 Add Service
                             </button>
                         </div>
-
-                        {data.services.map((service, index) => (
-                            <div key={index} className="mb-4 p-4 border border-gray-200 rounded-xl bg-gray-50">
-                                <div className="flex justify-between items-start mb-2">
-                                    <span className="text-sm font-medium text-gray-700">Service #{index + 1}</span>
-                                    {data.services.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => removeService(index)}
-                                            className="text-red-600 hover:text-red-800"
-                                        >
-                                            <TrashIcon className="h-5 w-5" />
-                                        </button>
-                                    )}
+                        <div className="p-6">
+                            {data.services.length === 0 && (
+                                <div className="text-center py-8">
+                                    <BuildingOfficeIcon className="h-12 w-12 mx-auto text-gray-400" />
+                                    <p className="mt-2 text-gray-500">No services added yet. Click "Add Service" to begin.</p>
                                 </div>
-                                <div className="grid grid-cols-1 gap-3">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Service Name</label>
-                                        <input
-                                            type="text"
-                                            value={service.name}
-                                            onChange={e => updateService(index, 'name', e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            placeholder="e.g., Issuance of Certificate"
-                                        />
-                                        {errors[`services.${index}.name`] && (
-                                            <p className="mt-1 text-xs text-red-600">{errors[`services.${index}.name`]}</p>
+                            )}
+
+                            <div className="space-y-4">
+                                {data.services.map((service, index) => (
+                                    <div
+                                        key={index}
+                                        className="relative border border-gray-200 rounded-xl p-5 bg-gray-50 hover:shadow-md transition-shadow"
+                                    >
+                                        <div className="absolute -top-2 -left-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                            #{index + 1}
+                                        </div>
+                                        {data.services.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeService(index)}
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                                                title="Remove service"
+                                            >
+                                                <TrashIcon className="h-4 w-4" />
+                                            </button>
                                         )}
+                                        <div className="grid grid-cols-1 gap-4 mt-2">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                    Service Name <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={service.name}
+                                                    onChange={e => updateService(index, 'name', e.target.value)}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                                                    placeholder="e.g., Issuance of Certificate"
+                                                />
+                                                {errors[`services.${index}.name`] && (
+                                                    <p className="mt-1 text-xs text-red-600">{errors[`services.${index}.name`]}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                    Description <span className="text-gray-400">(optional)</span>
+                                                </label>
+                                                <textarea
+                                                    value={service.description}
+                                                    onChange={e => updateService(index, 'description', e.target.value)}
+                                                    rows="2"
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                                                    placeholder="Brief description of this service..."
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Description (optional)</label>
-                                        <textarea
-                                            value={service.description}
-                                            onChange={e => updateService(index, 'description', e.target.value)}
-                                            rows="2"
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            placeholder="Brief description of this service..."
-                                        />
-                                    </div>
-                                </div>
+                                ))}
                             </div>
-                        ))}
 
-                        {errors.services && <p className="text-sm text-red-600">{errors.services}</p>}
-                        {data.services.length === 0 && (
-                            <p className="text-sm text-amber-600">At least one service is required.</p>
-                        )}
+                            {errors.services && <p className="mt-2 text-sm text-red-600">{errors.services}</p>}
+                        </div>
                     </div>
 
-                    {/* Submit Button */}
-                    <div className="flex justify-end pt-4">
+                    {/* Form Actions */}
+                    <div className="flex justify-end space-x-4 pt-6">
+                        <button
+                            type="button"
+                            onClick={() => window.history.back()}
+                            className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                        >
+                            Cancel
+                        </button>
                         <button
                             type="submit"
                             disabled={processing}
-                            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-800 hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-800 hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {processing ? 'Creating...' : 'Create Department & User'}
+                            {processing ? (
+                                <>
+                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    Creating...
+                                </>
+                            ) : (
+                                'Create Department & User'
+                            )}
                         </button>
                     </div>
                 </form>
