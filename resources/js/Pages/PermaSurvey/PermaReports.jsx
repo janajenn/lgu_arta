@@ -1,15 +1,15 @@
 import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import PermaReportsLayout from '../../Shared/Layouts/PermaReportsLayout';
-// import FilterBar from '../../Components/PermaDashboard/FilterBar';
+import FilterBar from '../../Components/PermaDashboard/FilterBar';
 import SummaryCards from '../../Components/PermaDashboard/SummaryCards';
 import DomainBarChart from '../../Components/PermaDashboard/DomainBarChart';
 import PermaRadarChart from '../../Components/PermaDashboard/RadarChart';
 import TrendChart from '../../Components/PermaDashboard/TrendChart';
 import InterpretationDonut from '../../Components/PermaDashboard/InterpretationDonut';
+import DepartmentRankings from '../../Components/PermaDashboard/DepartmentRankings';
 
-export default function PermaReports({ responses, filters, stats, departments = [] }) {
-    // Color mapping for score badges (reused from original)
+export default function PermaReports({ responses, filters, stats, departments, ageBrackets }) {
     const getColorClass = (color) => {
         const map = {
             green: 'bg-green-100 text-green-800 border-green-300',
@@ -21,7 +21,6 @@ export default function PermaReports({ responses, filters, stats, departments = 
         return map[color] || 'bg-gray-100 text-gray-800 border-gray-300';
     };
 
-    // Prepare data for charts from stats (if available)
     const domainBarData = stats ? [
         { domain: 'Positive Emotion', score: stats.averages.positive_emotion },
         { domain: 'Engagement', score: stats.averages.engagement },
@@ -42,19 +41,15 @@ export default function PermaReports({ responses, filters, stats, departments = 
         <PermaReportsLayout>
             <Head title="PERMA Reports" />
 
-            {/* Header */}
             <div className="mb-6 flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">PERMA Survey Reports</h1>
             </div>
 
-            
+            <FilterBar filters={filters} departments={departments} ageBrackets={ageBrackets} />
 
-            {/* Summary Cards */}
             {stats && <SummaryCards stats={stats} />}
 
-            {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Domain Bar Chart */}
                 <div className="bg-white rounded-xl shadow-sm p-4">
                     <h3 className="text-lg font-semibold mb-4">Domain Averages</h3>
                     {domainBarData.length > 0 ? (
@@ -63,8 +58,6 @@ export default function PermaReports({ responses, filters, stats, departments = 
                         <p className="text-gray-500">No data available</p>
                     )}
                 </div>
-
-                {/* Radar Chart */}
                 <div className="bg-white rounded-xl shadow-sm p-4">
                     <h3 className="text-lg font-semibold mb-4">Wellbeing Profile</h3>
                     {radarData.length > 0 ? (
@@ -75,7 +68,6 @@ export default function PermaReports({ responses, filters, stats, departments = 
                 </div>
             </div>
 
-            {/* Trend Chart - full width */}
             <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
                 <h3 className="text-lg font-semibold mb-4">Trend Over Time</h3>
                 {stats?.trends?.length ? (
@@ -85,7 +77,6 @@ export default function PermaReports({ responses, filters, stats, departments = 
                 )}
             </div>
 
-            {/* Interpretation Distribution + Insights */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <div className="bg-white rounded-xl shadow-sm p-4">
                     <h3 className="text-lg font-semibold mb-4">Overall Wellbeing Distribution</h3>
@@ -95,6 +86,9 @@ export default function PermaReports({ responses, filters, stats, departments = 
                         <p className="text-gray-500">No distribution data</p>
                     )}
                 </div>
+
+
+
                 <div className="bg-white rounded-xl shadow-sm p-4">
                     <h3 className="text-lg font-semibold mb-4">Insights</h3>
                     {stats ? (
@@ -118,15 +112,30 @@ export default function PermaReports({ responses, filters, stats, departments = 
                         <p className="text-gray-500">Apply filters to see insights</p>
                     )}
                 </div>
+
+                
             </div>
 
-            {/* Detailed Data Table (original) */}
+            {/* Department Rankings */}
+{(stats?.topDepartments?.length > 0 || stats?.bottomDepartments?.length > 0) && (
+  <div className="mb-6">
+    <DepartmentRankings 
+      topDepartments={stats.topDepartments} 
+      bottomDepartments={stats.bottomDepartments} 
+    />
+  </div>
+)}
+
+
+
             <div className="overflow-hidden rounded-xl bg-white shadow-lg">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gradient-to-r from-indigo-50 to-blue-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">User</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">Respondent</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">Department</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">Age</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">Date</th>
                                 <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-600">P</th>
                                 <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-600">E</th>
@@ -142,11 +151,14 @@ export default function PermaReports({ responses, filters, stats, departments = 
                                 <tr key={response.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                                     <td className="whitespace-nowrap px-6 py-4">
                                         <div className="text-sm font-medium text-gray-900">
-                                            {response.user ? response.user.name : 'Anonymous'}
+                                            {response.respondent_name || (response.user?.name || 'Anonymous')}
                                         </div>
-                                        {response.user?.department && (
-                                            <div className="text-xs text-gray-500">{response.user.department.name}</div>
-                                        )}
+                                    </td>
+                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                                        {response.department?.name || response.user?.department?.name || '-'}
+                                    </td>
+                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                                        {response.age_bracket || '-'}
                                     </td>
                                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                         {new Date(response.created_at).toLocaleDateString()}
@@ -196,7 +208,6 @@ export default function PermaReports({ responses, filters, stats, departments = 
                 </div>
             </div>
 
-            {/* Pagination */}
             {responses.links && (
                 <div className="mt-6 flex items-center justify-between">
                     <div className="text-sm text-gray-700">
