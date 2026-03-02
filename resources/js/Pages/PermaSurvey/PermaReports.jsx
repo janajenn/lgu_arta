@@ -119,10 +119,10 @@ export default function PermaReports({ responses, filters, stats, departments, a
             {/* Department Rankings */}
 {(stats?.topDepartments?.length > 0 || stats?.bottomDepartments?.length > 0) && (
   <div className="mb-6">
-    <DepartmentRankings 
-      topDepartments={stats.topDepartments} 
-      bottomDepartments={stats.bottomDepartments} 
-    />
+   <DepartmentRankings
+    goodDepartments={stats.goodDepartments}
+    needsAttentionDepartments={stats.needsAttentionDepartments}
+/>
   </div>
 )}
 

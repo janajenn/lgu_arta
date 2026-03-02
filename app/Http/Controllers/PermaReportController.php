@@ -173,56 +173,66 @@ class PermaReportController extends Controller
         $ageBrackets = ['20-29', '30-39', '40-49', '50-59', '60+'];
 
         // Department performance (overall PERMA average per department)
-$departmentPerformance = $statsQuery->clone()
-->join('departments', 'perma_responses.department_id', '=', 'departments.id')
-->select(
-    'departments.id',
-    'departments.name',
-    DB::raw("AVG((q1 + q9 + q17)/3) as meaning_avg"),
-    DB::raw("AVG((q2 + q8 + q16)/3) as accomplishment_avg"),
-    DB::raw("AVG((q3 + q11 + q21)/3) as engagement_avg"),
-    DB::raw("AVG((q4 + q13 + q18)/3) as health_avg"),
-    DB::raw("AVG((q5 + q10 + q22)/3) as positive_emotion_avg"),
-    DB::raw("AVG((q6 + q15 + q19)/3) as relationships_avg"),
-    DB::raw("AVG((q7 + q14 + q20)/3) as negative_emotion_avg"),
-    DB::raw("AVG(q12) as loneliness_avg"),
-    DB::raw("AVG(q23) as overall_happiness_avg")
-)
-->whereNotNull('perma_responses.department_id')
-->groupBy('departments.id', 'departments.name')
-->get()
-->map(function ($dept) {
-    // Compute overall PERMA average (average of the five core domains)
-    $overall = round((
-        $dept->positive_emotion_avg +
-        $dept->engagement_avg +
-        $dept->relationships_avg +
-        $dept->meaning_avg +
-        $dept->accomplishment_avg
-    ) / 5, 2);
+        $departmentPerformance = $statsQuery->clone()
+            ->join('departments', 'perma_responses.department_id', '=', 'departments.id')
+            ->select(
+                'departments.id',
+                'departments.name',
+                DB::raw("AVG((q1 + q9 + q17)/3) as meaning_avg"),
+                DB::raw("AVG((q2 + q8 + q16)/3) as accomplishment_avg"),
+                DB::raw("AVG((q3 + q11 + q21)/3) as engagement_avg"),
+                DB::raw("AVG((q4 + q13 + q18)/3) as health_avg"),
+                DB::raw("AVG((q5 + q10 + q22)/3) as positive_emotion_avg"),
+                DB::raw("AVG((q6 + q15 + q19)/3) as relationships_avg"),
+                DB::raw("AVG((q7 + q14 + q20)/3) as negative_emotion_avg"),
+                DB::raw("AVG(q12) as loneliness_avg"),
+                DB::raw("AVG(q23) as overall_happiness_avg")
+            )
+            ->whereNotNull('perma_responses.department_id')
+            ->groupBy('departments.id', 'departments.name')
+            ->get()
+            ->map(function ($dept) {
+                $overall = round((
+                    $dept->positive_emotion_avg +
+                    $dept->engagement_avg +
+                    $dept->relationships_avg +
+                    $dept->meaning_avg +
+                    $dept->accomplishment_avg
+                ) / 5, 2);
 
-    return [
-        'id'      => $dept->id,
-        'name'    => $dept->name,
-        'overall' => $overall,
-        'domains' => [
-            'positive_emotion' => round($dept->positive_emotion_avg, 2),
-            'engagement'       => round($dept->engagement_avg, 2),
-            'relationships'    => round($dept->relationships_avg, 2),
-            'meaning'          => round($dept->meaning_avg, 2),
-            'accomplishment'   => round($dept->accomplishment_avg, 2),
-            'health'           => round($dept->health_avg, 2),
-            'negative_emotion' => round($dept->negative_emotion_avg, 2),
-            'loneliness'       => round($dept->loneliness_avg, 2),
-            'overall_happiness'=> round($dept->overall_happiness_avg, 2),
-        ],
-    ];
-})
-->sortByDesc('overall')
-->values();
+                return [
+                    'id'      => $dept->id,
+                    'name'    => $dept->name,
+                    'overall' => $overall,
+                    'domains' => [
+                        'positive_emotion' => round($dept->positive_emotion_avg, 2),
+                        'engagement'       => round($dept->engagement_avg, 2),
+                        'relationships'    => round($dept->relationships_avg, 2),
+                        'meaning'          => round($dept->meaning_avg, 2),
+                        'accomplishment'   => round($dept->accomplishment_avg, 2),
+                        'health'           => round($dept->health_avg, 2),
+                        'negative_emotion' => round($dept->negative_emotion_avg, 2),
+                        'loneliness'       => round($dept->loneliness_avg, 2),
+                        'overall_happiness'=> round($dept->overall_happiness_avg, 2),
+                    ],
+                ];
+            })
+            ->sortByDesc('overall')
+            ->values();
 
-$stats['topDepartments'] = $departmentPerformance->take(3);
-$stats['bottomDepartments'] = $departmentPerformance->reverse()->take(3);
+        // Split based on overall score threshold
+        $goodDepartments = $departmentPerformance
+            ->filter(fn($dept) => $dept['overall'] >= 3.0)
+            ->sortByDesc('overall')
+            ->values();
+
+        $needsAttentionDepartments = $departmentPerformance
+            ->filter(fn($dept) => $dept['overall'] < 3.0)
+            ->sortByDesc('overall')
+            ->values();
+
+        $stats['goodDepartments'] = $goodDepartments;
+        $stats['needsAttentionDepartments'] = $needsAttentionDepartments;
 
         return Inertia::render('PermaSurvey/PermaReports', [
             'responses'   => $paginated,
@@ -232,6 +242,7 @@ $stats['bottomDepartments'] = $departmentPerformance->reverse()->take(3);
             'ageBrackets' => $ageBrackets,
         ]);
     }
+
 
     public function show($id)
     {
