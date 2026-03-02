@@ -3,7 +3,8 @@ import { Head, Link } from '@inertiajs/react';
 import { usePage } from '@inertiajs/react';
 
 export default function PermaLanding() {
-  const { flash } = usePage().props;
+  const { flash, auth } = usePage().props;
+  const user = auth?.user;
 
   return (
     <>
@@ -17,6 +18,31 @@ export default function PermaLanding() {
         {/* Content - solid backgrounds, above the animation */}
         <div className="relative z-10 max-w-4xl mx-auto px-4 py-8 sm:py-12 lg:py-16">
           
+          {/* Login / User status bar */}
+          <div className="flex justify-end mb-4">
+            {user ? (
+              user.role === 'hr' ? (
+                <Link
+                  href="/perma-reports"
+                  className="text-sm text-green-600 hover:text-green-800 border border-green-300 px-3 py-1 rounded"
+                >
+                  View Reports →
+                </Link>
+              ) : (
+                <span className="text-sm text-gray-500">
+                  Logged in as {user.name}
+                </span>
+              )
+            ) : (
+              <Link
+                href="/hr/login"
+                className="text-sm text-gray-600 hover:text-gray-900 border border-gray-300 px-3 py-1 rounded"
+              >
+                HR Login
+              </Link>
+            )}
+          </div>
+
           {/* Flash message */}
           {flash?.success && (
             <div className="mb-4 sm:mb-6 bg-green-100 border border-green-400 text-green-800 px-4 py-3 rounded flex items-center gap-2 text-sm sm:text-base">
@@ -42,26 +68,29 @@ export default function PermaLanding() {
             </div>
           </div>
 
-          {/* PERMA Cards */}
-          <div className="mb-12 sm:mb-16">
-            {/* Cards can be added here if needed */}
+         
+
+          {/* Why it matters – focus on contribution
+          <div className="text-center mb-12 sm:mb-16" id="learn-more">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+              Every response helps<br />
+              <span className="text-green-700">build a clearer picture.</span>
+            </h2>
+            <ul className="space-y-2 text-sm sm:text-base text-gray-700 max-w-md mx-auto">
+              <li>✦ Contribute to real research on workplace wellbeing</li>
+              <li>✦ No account, no email – just your honest input</li>
+              <li>✦ Help shape a better work environment for everyone</li>
+            </ul>
+          </div> */}
+
+          {/* Inspiring image */}
+          <div className="mb-8 flex justify-center">
+            <img
+              src="/images/landingpage.png"
+              alt="A diverse team collaborating happily, encouraging survey participation"
+              className="rounded-xl  max-w-full h-auto max-h-90 object-cover"
+            />
           </div>
-
-         {/* Why it matters – focus on contribution */}
-<div className="text-center mb-12 sm:mb-16" id="learn-more">
-  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-    Every response helps<br />
-    <span className="text-green-700">build a clearer picture.</span>
-  </h2>
-  <ul className="space-y-2 text-sm sm:text-base text-gray-700 max-w-md mx-auto">
-    <li>✦ Contribute to real research on workplace wellbeing</li>
-    <li>✦ No account, no email – just your honest input</li>
-    <li>✦ Help shape a better work environment for everyone</li>
-  </ul>
-</div>
-
-           
-            
 
           {/* Final CTA – reframed */}
           <div className="bg-gray-100 border border-gray-300 rounded p-6 sm:p-8 text-center mb-8 sm:mb-12">

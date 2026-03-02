@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register middleware aliases
         $middleware->alias([
             'check.account.type' => \App\Http\Middleware\CheckAccountTypeMiddleware::class,
+            'hr' => \App\Http\Middleware\IsHrUser::class, 
         ]);
         
         // Or add it to the web middleware group if you want it to run on all web requests

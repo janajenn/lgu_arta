@@ -9,7 +9,9 @@ use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\DepartmentHead\DashboardController as DepartmentHeadDashboardController;
 use App\Http\Controllers\DepartmentHead\DepartmentUserController;
 use App\Http\Controllers\PermaSurveyController;
+use App\Http\Controllers\PermaReportController;
 
+use App\Http\Controllers\Auth\HrLoginController;
 
 // Public department selection (landing page)
 Route::get('/', [App\Http\Controllers\Public\DepartmentController::class, 'index'])->name('public.departments');
@@ -56,6 +58,15 @@ Route::middleware('guest')->group(function () {
         ->name('password.reset');
     Route::post('reset-password', [\App\Http\Controllers\Auth\NewPasswordController::class, 'store'])
         ->name('password.store');
+
+
+
+        // Add HR-specific login
+    Route::get('/hr/login', [App\Http\Controllers\Auth\HrLoginController::class, 'create'])->name('hr.login');
+    Route::post('/hr/login', [App\Http\Controllers\Auth\HrLoginController::class, 'store'])->name('hr.login');
+
+
+    
 });
 
 // Authenticated routes with account validation
@@ -118,6 +129,18 @@ Route::get('/department-head/departments/{department}', [\App\Http\Controllers\D
     ->name('department-head.departments.show');
 
     
+    });
+
+
+    Route::middleware(['auth', 'hr'])->group(function () {
+        Route::get('/perma-reports', [PermaReportController::class, 'index'])->name('perma.reports');
+
+
+        Route::get('/perma-reports/{id}', [PermaReportController::class, 'show'])->name('perma.reports.show');
+
+
+        Route::get('/perma-reports/stats', [PermaReportController::class, 'stats'])->name('perma-reports.stats');
+        // Add other report routes here (e.g., show, export)
     });
 
 

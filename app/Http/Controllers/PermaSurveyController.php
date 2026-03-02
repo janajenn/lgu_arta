@@ -15,19 +15,19 @@ class PermaSurveyController extends Controller
 
     public function form(Request $request)
     {
-        // Prevent resubmission via cookie
-        if ($request->cookie('perma_submitted')) {
-            return redirect()->route('perma.thankyou')->with('info', 'You have already completed this survey.');
-        }
+        // // Prevent resubmission via cookie
+        // if ($request->cookie('perma_submitted')) {
+        //     return redirect()->route('perma.thankyou')->with('info', 'You have already completed this survey.');
+        // }
         return Inertia::render('PermaSurvey/PermaForm');
     }
 
     public function store(Request $request)
     {
-        // Double‑check cookie
-        if ($request->cookie('perma_submitted')) {
-            return redirect()->route('perma.thankyou')->with('error', 'You have already submitted.');
-        }
+        // // Double‑check cookie
+        // if ($request->cookie('perma_submitted')) {
+        //     return redirect()->route('perma.thankyou')->with('error', 'You have already submitted.');
+        // }
 
         $rules = [];
         for ($i = 1; $i <= 23; $i++) {

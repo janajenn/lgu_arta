@@ -42,6 +42,8 @@ class AuthenticatedSessionController extends Controller
     
         // All users are department heads for now
         return redirect()->route('department-head.dashboard');
+
+        \Log::info('AuthenticatedSessionController store');
     }
 
     /**
