@@ -61,9 +61,9 @@ Route::middleware('guest')->group(function () {
 
 
 
-        // Add HR-specific login
-    Route::get('/hr/login', [App\Http\Controllers\Auth\HrLoginController::class, 'create'])->name('hr.login');
-    Route::post('/hr/login', [App\Http\Controllers\Auth\HrLoginController::class, 'store'])->name('hr.login');
+       // Add HR-specific login
+Route::get('/hr/login', [App\Http\Controllers\Auth\HrLoginController::class, 'create'])->name('hr.login.form');
+Route::post('/hr/login', [App\Http\Controllers\Auth\HrLoginController::class, 'store'])->name('hr.login.store');
 
 
     
