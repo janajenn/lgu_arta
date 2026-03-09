@@ -10,9 +10,9 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
         respondent: {
             client_type: 'citizen',
             date_of_transaction: '',
-            sex: 'male',
+            sex: 'prefer_not_to_say',
             age: '',
-            region_of_residence: '',
+            region_of_residence: 'Region X (Northern Mindanao)',
             service_availed: initialService,
         },
         service_id: service?.id || '',
@@ -100,9 +100,9 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
         { value: 'N/A (Not Applicable)', label: 'N/A (Not Applicable)', short: 'N/A' }
     ];
 
-   
 
-        
+
+
 
     // Bisaya Translations
     const translations = {
@@ -198,21 +198,21 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
         'service_availed': 'Service Availed *',
 
         // Citizen's Charter Questions
-        'cc1_title': 'CC1. Which of the following best describes your awareness of a CC?',
+        'cc1_title': 'CC1. Which of the following best describes your awareness of a Citizens Charter (CC)?',
         'cc1_option1': '1. I know what a CC is and I saw this office\'s CC.',
         'cc1_option2': '2. I know what a CC is but I did NOT see this office\'s CC.',
         'cc1_option3': '3. I learned of the CC only when I saw this office\'s CC.',
         'cc1_option4': '4. I do not know what a CC is and I did not see one in this office.',
         'cc1_note': '(Answer "N/A" on CC2 and CC3)',
 
-        'cc2_title': 'CC2. If aware of CC (answered 1–3 in CC1), would you say that the CC of this office was … ?',
+        'cc2_title': 'CC2. If aware of CC (answered 1–3 in CC1), would you say that the Citizens Charter of this office was … ?',
         'cc2_option1': '1. Easy to see',
         'cc2_option2': '2. Somewhat easy to see',
         'cc2_option3': '3. Difficult to see',
         'cc2_option4': '4. Not visible at all',
         'cc2_option5': '5. N/A',
 
-        'cc3_title': 'CC3. If aware of CC (answered codes 1–3 in CC1), how much did the CC help you in your transaction?',
+        'cc3_title': 'CC3. If aware of Citizens Charter (answered codes 1–3 in CC1), how much did the Citizens Charter help you in your transaction?',
         'cc3_option1': '1. Helped very much',
         'cc3_option2': '2. Somewhat helped',
         'cc3_option3': '3. Did not help',
@@ -246,9 +246,9 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
     };
 
 
-   
 
-   
+
+
 
 
     console.log('SurveyCreate – service prop:', service);
@@ -261,8 +261,8 @@ console.log('Initial service_availed:', initialService);
         <>
             <Head title="ARTA Survey Questionnaire" />
 
-           
-            
+
+
             <div className="relative overflow-hidden bg-gradient-to-br from-white to-red-50 min-h-screen w-full">
 
 
@@ -270,7 +270,7 @@ console.log('Initial service_availed:', initialService);
             {department && service && (
                 <div className="mb-4 p-4 bg-blue-50 rounded-lg max-w-6xl mx-auto">
                     <p className="text-sm text-blue-800">
-                        <span className="font-semibold">Department:</span> {department.name} — 
+                        <span className="font-semibold">Department:</span> {department.name} —
                         <span className="font-semibold ml-2">Service:</span> {service.name}
                     </p>
                 </div>
@@ -282,13 +282,13 @@ console.log('Initial service_availed:', initialService);
                     <div className="absolute -right-32 -top-32 w-96 h-96 bg-red-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
                     <div className="absolute -left-32 -bottom-32 w-96 h-96 bg-red-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
                     <div className="absolute -right-32 -bottom-32 w-96 h-96 bg-red-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-                    
+
                     {/* Red wave pattern */}
                     <svg className="absolute bottom-0 left-0 w-full h-64 text-red-600" viewBox="0 0 1440 320" preserveAspectRatio="none">
                         <path fill="currentColor" fillOpacity="0.1" d="M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,165.3C672,139,768,117,864,122.7C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
                     </svg>
                 </div>
-                
+
                 <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-10 lg:py-12">
                     {/* Navigation */}
                     <nav className="flex items-center justify-between mb-6 sm:mb-10 max-w-7xl mx-auto">
@@ -305,7 +305,7 @@ console.log('Initial service_availed:', initialService);
                                 <p className="text-xs text-gray-600 font-medium">Anti-Red Tape Authority</p>
                             </div>
                         </div>
-                        
+
                         {/* Survey Progress */}
                         <div className="hidden sm:flex items-center space-x-4">
                             <div className="text-right">
@@ -333,7 +333,7 @@ console.log('Initial service_availed:', initialService);
                                         {t.subtitle}
                                     </p>
                                 </div>
-                                
+
                                 {/* Language Toggle */}
                                 <button
                                     type="button"
@@ -355,7 +355,7 @@ console.log('Initial service_availed:', initialService);
                                     {isBisaya ? 'Switch to English' : 'Bisaya Version'}
                                 </button>
                             </div>
-                            
+
                             {/* <div className="flex flex-wrap gap-3">
                                 {[
                                     { icon: '⏱️', text: '10-15 mins' },
@@ -634,9 +634,9 @@ console.log('Initial service_availed:', initialService);
     ))}
   </div>
 </div>
-<div className="overflow-x-auto rounded-xl border border-gray-200 relative">
+<div className="overflow-auto rounded-xl border border-gray-200 relative max-h-96">
   <table className="min-w-full divide-y divide-gray-200">
-    <thead className="bg-gradient-to-r from-red-50 to-red-100">
+    <thead className="sticky top-0 z-10 bg-gradient-to-r from-red-50 to-red-100">
       <tr>
         {/* Sticky first header cell */}
         <th className="sticky left-0 z-10 px-4 py-4 text-left text-sm font-semibold text-gray-900 uppercase tracking-wider bg-gradient-to-r from-red-50 to-red-100">
@@ -747,7 +747,7 @@ console.log('Initial service_availed:', initialService);
                                             </h4>
                                         </div>
                                         <p className="text-green-700">
-                                            {isBisaya 
+                                            {isBisaya
                                                 ? "Daghang salamat sa imong panahon ug hinanaling feedback!"
                                                 : "Thank you for your time and valuable feedback!"}
                                         </p>
@@ -828,7 +828,7 @@ console.log('Initial service_availed:', initialService);
                                         <p className="text-gray-600 text-sm">Republic of the Philippines</p>
                                     </div>
                                 </div>
-                                
+
                                 <p className="text-gray-500 text-sm">
                                     This survey is conducted in compliance with Republic Act No. 11032 (Ease of Doing Business Act)
                                 </p>

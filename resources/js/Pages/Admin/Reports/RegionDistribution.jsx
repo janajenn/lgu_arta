@@ -1,0 +1,66 @@
+import { Head, Link } from '@inertiajs/react';
+import AdminLayout from '../../../Shared/Layouts/AdminLayout';
+import { GlobeAltIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import InsightsCard from '../Reports/InsightsCard';
+
+export default function RegionDistribution({ regions, total, insights }) {
+    return (
+        <AdminLayout title="Region Distribution">
+            <Head title="Region Distribution" />
+
+            <div className="space-y-6">
+                <Link
+                    href={route('admin.reports.index')}
+                    className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+                >
+                    <ArrowLeftIcon className="h-4 w-4 mr-1" />
+                    Back to Reports
+                </Link>
+
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+                        <h2 className="text-lg font-semibold text-white flex items-center">
+                            <GlobeAltIcon className="h-5 w-5 mr-2" />
+                            Region Distribution
+                        </h2>
+                    </div>
+                    <InsightsCard insights={insights} />
+                    <div className="p-6">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Respondents</th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {Object.entries(regions).map(([region, count]) => (
+                                    <tr key={region} className="hover:bg-gray-50">
+                                        <td className="px-4 py-2 text-sm font-medium text-gray-900">{region}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-500">{count}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-500">
+                                            {total > 0 ? ((count / total) * 100).toFixed(1) : 0}%
+                                        </td>
+                                    </tr>
+                                ))}
+                                {Object.keys(regions).length === 0 && (
+                                    <tr>
+                                        <td colSpan="3" className="px-4 py-2 text-center text-gray-500">No data available</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                            <tfoot className="bg-gray-50">
+                                <tr>
+                                    <td className="px-4 py-2 text-sm font-medium text-gray-900">Total</td>
+                                    <td className="px-4 py-2 text-sm font-bold text-gray-900">{total}</td>
+                                    <td className="px-4 py-2 text-sm text-gray-500">100%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </AdminLayout>
+    );
+}

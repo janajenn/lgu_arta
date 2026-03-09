@@ -30,7 +30,9 @@ import {
     LightBulbIcon,
     ExclamationCircleIcon,
     CalculatorIcon,
-    PresentationChartLineIcon
+    PresentationChartLineIcon,
+    EyeIcon,
+    
 } from '@heroicons/react/24/outline';
 
 
@@ -48,6 +50,11 @@ export default function Analytics({
     const [localFilters, setLocalFilters] = useState(filters || {});
     const [exporting, setExporting] = useState(false);
     const [activeTab, setActiveTab] = useState('cc');
+
+
+    const ccAwareness = ccAnalytics?.CC1?.answer_stats?.find(s => s.code == '1')?.percentage || 0;
+    const ccVisibility = ccAnalytics?.CC2?.answer_stats?.find(s => s.code == '1')?.percentage || 0;
+    const ccHelpfulness = ccAnalytics?.CC3?.answer_stats?.find(s => s.code == '1')?.percentage || 0;
 
     useEffect(() => {
         setLocalFilters(filters || {});
@@ -91,6 +98,21 @@ export default function Analytics({
             setExporting(false);
         }
     };
+
+
+    const getRatingInterpretation = (percentage) => {
+        if (percentage < 60) return { label: 'Poor', color: 'text-red-600 bg-red-100' };
+        if (percentage >= 60 && percentage < 80) return { label: 'Fair', color: 'text-yellow-600 bg-yellow-100' };
+        if (percentage >= 80 && percentage < 90) return { label: 'Satisfactory', color: 'text-blue-600 bg-blue-100' };
+        if (percentage >= 90 && percentage <= 94.9) return { label: 'Very Satisfactory', color: 'text-green-600 bg-green-100' };
+        // For 95% and above (if you want to add "Excellent", but not in spec)
+        return { label: 'Very Satisfactory', color: 'text-green-600 bg-green-100' };
+    };
+    
+    const rating = getRatingInterpretation(overallSQDSummary?.overall_sqd_percentage || 0);
+
+    console.log('ccAnalytics:', ccAnalytics);
+console.log('CC1 answer_stats:', ccAnalytics?.CC1?.answer_stats);
 
     return (
         <DepartmentHeadLayout title='Analytics'>
@@ -259,6 +281,8 @@ export default function Analytics({
                 </div>
             </div>
 
+           
+
             {/* Tab Navigation */}
             <div className="mb-6">
                 <div className="flex border-b border-gray-200">
@@ -294,6 +318,39 @@ export default function Analytics({
             {/* CC Analytics */}
             {activeTab === 'cc' && (
                 <div className="space-y-6">
+
+                    {/* CC Metrics Cards - Smaller Version */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-md p-4 text-white">
+        <div className="flex items-center justify-between mb-3">
+            <DocumentTextIcon className="h-8 w-8 text-indigo-100" />
+            <span className="text-indigo-100 text-xs font-medium">CC1</span>
+        </div>
+        <h3 className="text-base font-semibold mb-1">CC Awareness</h3>
+        <p className="text-2xl font-bold mb-1">{ccAwareness}%</p>
+        <p className="text-indigo-100 text-xs">Aware of CC (answered 1)</p>
+    </div>
+
+    <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-md p-4 text-white">
+        <div className="flex items-center justify-between mb-3">
+            <EyeIcon className="h-8 w-8 text-teal-100" />
+            <span className="text-teal-100 text-xs font-medium">CC2</span>
+        </div>
+        <h3 className="text-base font-semibold mb-1">CC Visibility</h3>
+        <p className="text-2xl font-bold mb-1">{ccVisibility}%</p>
+        <p className="text-teal-100 text-xs">Easy to see (answered 1)</p>
+    </div>
+
+    <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md p-4 text-white">
+        <div className="flex items-center justify-between mb-3">
+            <LightBulbIcon className="h-8 w-8 text-amber-100" />
+            <span className="text-amber-100 text-xs font-medium">CC3</span>
+        </div>
+        <h3 className="text-base font-semibold mb-1">CC Helpfulness</h3>
+        <p className="text-2xl font-bold mb-1">{ccHelpfulness}%</p>
+        <p className="text-amber-100 text-xs">Very helpful (answered 1)</p>
+    </div>
+</div>
                     <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
                         <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-100">
                             <div className="flex items-center space-x-3">
@@ -550,13 +607,16 @@ export default function Analytics({
                                     </div>
 
                                     <div className="text-center">
-                                        <div className="text-5xl font-bold text-purple-700">
-                                            {overallSQDSummary?.overall_sqd_percentage || 0}%
-                                        </div>
-                                        <div className="text-sm text-purple-600 font-medium mt-1">
-                                            Overall SQD Score
-                                        </div>
-                                    </div>
+    <div className="text-5xl font-bold text-purple-700">
+        {overallSQDSummary?.overall_sqd_percentage || 0}%
+    </div>
+    <div className="text-sm text-purple-600 font-medium mt-1">
+        Overall SQD Score
+    </div>
+    <div className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-semibold ${rating.color}`}>
+        {rating.label}
+    </div>
+</div>
                                 </div>
 
                                 {/* Progress Bar Visualization */}

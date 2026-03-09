@@ -44,13 +44,13 @@ public function index(Request $request)
 
     // Apply filters
     $this->applyFilters($query, $filters);
-    
+
     // Get filtered respondent IDs
     $respondentIds = $query->pluck('id');
 
     // Get all CC questions with their possible answers
     $ccAnalytics = $this->getCCAnalytics($respondentIds);
-    
+
     // Get all SQD questions with their possible answers
     $sqdAnalytics = $this->getSQDAnalytics($respondentIds);
 
@@ -171,7 +171,7 @@ private function applyFilters($query, $filters)
         foreach ($ccQuestionStructures as $customId => $questionData) {
             // Get the question from database
             $question = SurveyQuestion::where('custom_id', $customId)->first();
-            
+
             if (!$question) {
                 continue;
             }
@@ -189,7 +189,7 @@ private function applyFilters($query, $filters)
                 $count = $responses->where('answer_value', $answerCode)->count();
                 // FIXED: Always use total_responses as denominator
                 $percentage = $totalResponses > 0 ? round(($count / $totalResponses) * 100, 1) : 0;
-                
+
                 $answerStats[] = [
                     'code' => $answerCode,
                     'answer' => $answerCode,
@@ -242,49 +242,49 @@ private function applyFilters($query, $filters)
                 'bisaya' => 'N/A (Dili Aplikable)'
             ]
         ];
-    
+
         // Get SQD questions from database
         $sqdQuestions = SurveyQuestion::where('custom_id', 'like', 'SQD%')
             ->orderBy('custom_id')
             ->get();
-    
+
         $analytics = [];
-    
+
         foreach ($sqdQuestions as $question) {
             // Get responses for this question
             $responses = SurveyResponse::where('question_id', $question->id)
                 ->whereIn('respondent_id', $respondentIds)
                 ->get();
-    
+
             $totalResponses = $responses->count();
-    
+
             // Initialize all choices with 0 count
             $answerStats = [];
             $validResponsesCount = 0;
             $weightedSum = 0;
-            
+
             $naCount = 0;
             $agreeCount = 0;
             $stronglyAgreeCount = 0;
-    
+
             foreach ($answerMappings as $englishAnswer => $mapping) {
                 // Count English responses
                 $countEnglish = $responses->where('answer_value', $englishAnswer)->count();
-                
+
                 // Count Bisaya responses
                 $countBisaya = 0;
                 if (isset($mapping['bisaya'])) {
                     $countBisaya = $responses->where('answer_value', $mapping['bisaya'])->count();
                 }
-                
+
                 // Total count for this answer category
                 $totalCount = $countEnglish + $countBisaya;
-                
+
                 // Count valid responses (non-N/A) for average calculation
                 if ($englishAnswer !== 'N/A (Not Applicable)') {
                     $validResponsesCount += $totalCount;
                     $weightedSum += $totalCount * $mapping['score'];
-                    
+
                     // Track Agree and Strongly Agree counts for SQD calculation
                     if ($englishAnswer === 'Agree') {
                         $agreeCount = $totalCount;
@@ -294,7 +294,7 @@ private function applyFilters($query, $filters)
                 } else {
                     $naCount = $totalCount;
                 }
-                
+
                 // Store count for all answers (using English version for display)
                 $answerStats[] = [
                     'answer' => $englishAnswer,
@@ -303,21 +303,21 @@ private function applyFilters($query, $filters)
                     'percentage' => 0 // Will be calculated below
                 ];
             }
-    
+
             // Calculate percentages for ALL answers using total_responses as denominator
             foreach ($answerStats as &$stat) {
                 $stat['percentage'] = $totalResponses > 0 ? round(($stat['count'] / $totalResponses) * 100, 1) : 0;
             }
-    
+
             // Calculate average score (excluding N/A)
             $averageScore = $validResponsesCount > 0 ? round($weightedSum / $validResponsesCount, 2) : 0;
-            
+
             // Calculate SQD score using the formula: (Strongly Agree + Agree) / (Total Responses - N/A) × 100
             $validTotalResponses = $totalResponses - $naCount;
-            $sqdScore = $validTotalResponses > 0 
+            $sqdScore = $validTotalResponses > 0
                 ? round((($stronglyAgreeCount + $agreeCount) / $validTotalResponses) * 100, 1)
                 : 0;
-    
+
             $analytics[$question->custom_id] = [
                 'question' => $question->question_text,
                 'question_number' => $question->question_number,
@@ -330,7 +330,7 @@ private function applyFilters($query, $filters)
                 'all_choices' => $answerMappings
             ];
         }
-    
+
         return $analytics;
     }
 
@@ -374,27 +374,27 @@ private function applyFilters($query, $filters)
 
     // Get analytics data - ONLY for completed surveys
     $filters = $request->only(['age_group', 'client_type', 'sex', 'region', 'service_availed', 'date_from', 'date_to']);
-    
+
     $query = Respondent::completedSurvey();
 
     $query = $this->scopeByDepartment($query, $request->user());
-    
+
     // Apply filters using the same method
     $this->applyFilters($query, $filters);
-    
+
     $respondentIds = $query->pluck('id');
-    
+
     $ccAnalytics = $this->getCCAnalytics($respondentIds);
     $sqdAnalytics = $this->getSQDAnalytics($respondentIds);
     $overallSQDSummary = $this->calculateOverallSQDSummary($sqdAnalytics, $respondentIds);
 
     $callback = function() use($ccAnalytics, $sqdAnalytics, $overallSQDSummary) {
         $file = fopen('php://output', 'w');
-        
+
         // Export CC Analytics
         fputcsv($file, ['CITIZEN\'S CHARTER (CC) ANALYTICS']);
         fputcsv($file, ['Question ID', 'Question', 'Answer Code', 'Answer Description', 'Count', 'Percentage']);
-        
+
         foreach ($ccAnalytics as $ccId => $data) {
             foreach ($data['answer_stats'] as $stat) {
                 fputcsv($file, [
@@ -414,21 +414,21 @@ private function applyFilters($query, $filters)
         fputcsv($file, []);
         fputcsv($file, ['OVERALL SQD SUMMARY (SQD0-SQD8)']);
         fputcsv($file, ['Response Type', 'Respondent Count', 'Percentage of Total Respondents']);
-        
+
         if ($overallSQDSummary) {
-            fputcsv($file, ['Strongly Agree', $overallSQDSummary['strongly_agree_responses'], 
+            fputcsv($file, ['Strongly Agree', $overallSQDSummary['strongly_agree_responses'],
                 $overallSQDSummary['total_responses'] > 0 ? round(($overallSQDSummary['strongly_agree_responses'] / $overallSQDSummary['total_responses']) * 100, 1) . '%' : '0%']);
-            fputcsv($file, ['Agree', $overallSQDSummary['agree_responses'], 
+            fputcsv($file, ['Agree', $overallSQDSummary['agree_responses'],
                 $overallSQDSummary['total_responses'] > 0 ? round(($overallSQDSummary['agree_responses'] / $overallSQDSummary['total_responses']) * 100, 1) . '%' : '0%']);
-            fputcsv($file, ['Neither Agree Nor Disagree', $overallSQDSummary['answer_totals']['Neither Agree Nor Disagree'], 
+            fputcsv($file, ['Neither Agree Nor Disagree', $overallSQDSummary['answer_totals']['Neither Agree Nor Disagree'],
                 $overallSQDSummary['total_responses'] > 0 ? round(($overallSQDSummary['answer_totals']['Neither Agree Nor Disagree'] / $overallSQDSummary['total_responses']) * 100, 1) . '%' : '0%']);
-            fputcsv($file, ['Disagree', $overallSQDSummary['answer_totals']['Disagree'], 
+            fputcsv($file, ['Disagree', $overallSQDSummary['answer_totals']['Disagree'],
                 $overallSQDSummary['total_responses'] > 0 ? round(($overallSQDSummary['answer_totals']['Disagree'] / $overallSQDSummary['total_responses']) * 100, 1) . '%' : '0%']);
-            fputcsv($file, ['Strongly Disagree', $overallSQDSummary['answer_totals']['Strongly Disagree'], 
+            fputcsv($file, ['Strongly Disagree', $overallSQDSummary['answer_totals']['Strongly Disagree'],
                 $overallSQDSummary['total_responses'] > 0 ? round(($overallSQDSummary['answer_totals']['Strongly Disagree'] / $overallSQDSummary['total_responses']) * 100, 1) . '%' : '0%']);
-            fputcsv($file, ['N/A (Not Applicable)', $overallSQDSummary['na_responses'], 
+            fputcsv($file, ['N/A (Not Applicable)', $overallSQDSummary['na_responses'],
                 $overallSQDSummary['total_responses'] > 0 ? round(($overallSQDSummary['na_responses'] / $overallSQDSummary['total_responses']) * 100, 1) . '%' : '0%']);
-            
+
             fputcsv($file, ['', '', '']);
             fputcsv($file, ['Total Respondents (Answered SQD)', $overallSQDSummary['total_responses'], '100%']);
             fputcsv($file, ['Valid Respondents (Non-N/A)', $overallSQDSummary['valid_responses'], '']);
@@ -440,7 +440,7 @@ private function applyFilters($query, $filters)
         fputcsv($file, []);
         fputcsv($file, ['SERVICE QUALITY DIMENSIONS (SQD) ANALYTICS']);
         fputcsv($file, ['Question ID', 'Question', 'Answer', 'Score', 'Response Count', 'Percentage']);
-        
+
         foreach ($sqdAnalytics as $sqdId => $data) {
             foreach ($data['answer_stats'] as $stat) {
                 fputcsv($file, [
@@ -469,110 +469,97 @@ private function applyFilters($query, $filters)
  */
 private function calculateOverallSQDSummary($sqdAnalytics, $respondentIds)
 {
-    // First, get all unique respondent IDs who answered SQD questions
+    // --- Respondent-based counts (for the six cards) ---
     $sqdRespondentIds = SurveyResponse::whereIn('respondent_id', $respondentIds)
-        ->whereHas('question', function ($query) {
-            $query->where('custom_id', 'like', 'SQD%');
-        })
+        ->whereHas('question', fn($q) => $q->where('custom_id', 'like', 'SQD%'))
         ->pluck('respondent_id')
         ->unique()
         ->values();
-    
+
     $totalRespondents = $sqdRespondentIds->count();
-    
-    // Now count respondents who answered N/A for ANY SQD question
+
     $naRespondents = SurveyResponse::whereIn('respondent_id', $sqdRespondentIds)
-        ->whereHas('question', function ($query) {
-            $query->where('custom_id', 'like', 'SQD%');
-        })
+        ->whereHas('question', fn($q) => $q->where('custom_id', 'like', 'SQD%'))
         ->where('answer_value', 'N/A (Not Applicable)')
         ->pluck('respondent_id')
         ->unique()
         ->count();
-    
-    // Count respondents who answered Agree or Strongly Agree for ANY SQD question
-    $agreeRespondents = SurveyResponse::whereIn('respondent_id', $sqdRespondentIds)
-        ->whereHas('question', function ($query) {
-            $query->where('custom_id', 'like', 'SQD%');
-        })
-        ->whereIn('answer_value', ['Agree', 'Strongly Agree'])
-        ->pluck('respondent_id')
-        ->unique()
-        ->count();
-    
-    // Count respondents who answered Strongly Agree
+
     $stronglyAgreeRespondents = SurveyResponse::whereIn('respondent_id', $sqdRespondentIds)
-        ->whereHas('question', function ($query) {
-            $query->where('custom_id', 'like', 'SQD%');
-        })
+        ->whereHas('question', fn($q) => $q->where('custom_id', 'like', 'SQD%'))
         ->where('answer_value', 'Strongly Agree')
         ->pluck('respondent_id')
         ->unique()
         ->count();
-    
-    // Count respondents who answered Agree
-    $justAgreeRespondents = SurveyResponse::whereIn('respondent_id', $sqdRespondentIds)
-        ->whereHas('question', function ($query) {
-            $query->where('custom_id', 'like', 'SQD%');
-        })
+
+    $agreeRespondents = SurveyResponse::whereIn('respondent_id', $sqdRespondentIds)
+        ->whereHas('question', fn($q) => $q->where('custom_id', 'like', 'SQD%'))
         ->where('answer_value', 'Agree')
         ->pluck('respondent_id')
         ->unique()
         ->count();
-    
-    // Count respondents who answered Disagree
+
     $disagreeRespondents = SurveyResponse::whereIn('respondent_id', $sqdRespondentIds)
-        ->whereHas('question', function ($query) {
-            $query->where('custom_id', 'like', 'SQD%');
-        })
+        ->whereHas('question', fn($q) => $q->where('custom_id', 'like', 'SQD%'))
         ->where('answer_value', 'Disagree')
         ->pluck('respondent_id')
         ->unique()
         ->count();
-    
-    // Count respondents who answered Strongly Disagree
+
     $stronglyDisagreeRespondents = SurveyResponse::whereIn('respondent_id', $sqdRespondentIds)
-        ->whereHas('question', function ($query) {
-            $query->where('custom_id', 'like', 'SQD%');
-        })
+        ->whereHas('question', fn($q) => $q->where('custom_id', 'like', 'SQD%'))
         ->where('answer_value', 'Strongly Disagree')
         ->pluck('respondent_id')
         ->unique()
         ->count();
-    
-    // Count respondents who answered Neutral
+
     $neutralRespondents = SurveyResponse::whereIn('respondent_id', $sqdRespondentIds)
-        ->whereHas('question', function ($query) {
-            $query->where('custom_id', 'like', 'SQD%');
-        })
+        ->whereHas('question', fn($q) => $q->where('custom_id', 'like', 'SQD%'))
         ->where('answer_value', 'Neither Agree Nor Disagree')
         ->pluck('respondent_id')
         ->unique()
         ->count();
-    
-    // Valid respondents (those who didn't answer N/A for ANY question)
+
     $validRespondents = $totalRespondents - $naRespondents;
-    
-    // Calculate overall SQD percentage
-    $overallSQDPercentage = $validRespondents > 0 
-        ? round((($stronglyAgreeRespondents + $justAgreeRespondents) / $validRespondents) * 100, 1)
+
+    // --- Response-based totals (for the overall percentage) ---
+    $totalValidResponses = 0;
+    $totalPositiveResponses = 0;
+
+    foreach ($sqdAnalytics as $questionData) {
+        $validResponses = $questionData['total_responses'] - $questionData['na_responses'];
+        $positiveResponses = 0;
+        foreach ($questionData['answer_stats'] as $stat) {
+            if ($stat['answer'] === 'Agree' || $stat['answer'] === 'Strongly Agree') {
+                $positiveResponses += $stat['count'];
+            }
+        }
+        $totalValidResponses += $validResponses;
+        $totalPositiveResponses += $positiveResponses;
+    }
+
+    $overallSQDPercentage = $totalValidResponses > 0
+        ? round(($totalPositiveResponses / $totalValidResponses) * 100, 1)
         : 0;
-    
+
     return [
+        // Respondent-based (for the six cards)
         'answer_totals' => [
-            'Strongly Disagree' => $stronglyDisagreeRespondents,
-            'Disagree' => $disagreeRespondents,
+            'Strongly Disagree'      => $stronglyDisagreeRespondents,
+            'Disagree'                => $disagreeRespondents,
             'Neither Agree Nor Disagree' => $neutralRespondents,
-            'Agree' => $justAgreeRespondents,
-            'Strongly Agree' => $stronglyAgreeRespondents,
-            'N/A (Not Applicable)' => $naRespondents
+            'Agree'                   => $agreeRespondents,
+            'Strongly Agree'          => $stronglyAgreeRespondents,
+            'N/A (Not Applicable)'    => $naRespondents,
         ],
-        'total_responses' => $totalRespondents,
-        'valid_responses' => $validRespondents,
-        'na_responses' => $naRespondents,
-        'agree_responses' => $justAgreeRespondents,
+        'total_responses'          => $totalRespondents,
+        'valid_responses'          => $validRespondents,
+        'na_responses'             => $naRespondents,
+        'agree_responses'          => $agreeRespondents,
         'strongly_agree_responses' => $stronglyAgreeRespondents,
-        'overall_sqd_percentage' => $overallSQDPercentage
+
+        // Response-based overall percentage (now ≤ 100%)
+        'overall_sqd_percentage'   => $overallSQDPercentage,
     ];
 }
 

@@ -14,9 +14,8 @@ class DashboardController extends Controller
      /**
      * Display the department head dashboard.
      */
-    public function index(Request $request)
+ public function index(Request $request)
 {
-    // Authorization check remains the same
     if (!$request->user() || !$request->user()->isDepartmentHead()) {
         abort(403, 'Unauthorized access. Department head privileges required.');
     }
@@ -35,15 +34,9 @@ class DashboardController extends Controller
 
     // Base query - ALL transactions, then filtered
     $query = Respondent::query();
-
-
-   
     $query = $this->scopeByDepartment($query, $request->user());
-
-    // Apply user-selected filters (if any)
     $this->applyFilters($query, $filters);
 
-    // ---- ADD THIS LINE ----
     // Only show completed surveys in the table
     $query->where('completed_survey', true);
 
@@ -52,12 +45,26 @@ class DashboardController extends Controller
     $sortDirection = $request->get('direction', 'desc');
     $responses = $query->orderBy($sortField, $sortDirection)->paginate(15);
 
-    // Rest of the method unchanged...
+    // Compute totals BEFORE using them
+    $totalTransactions = Respondent::whereHas('service', fn($q) => $q->where('department_id', $request->user()->department_id))->count();
+    $totalResponses = Respondent::where('completed_survey', true)
+        ->whereHas('service', fn($q) => $q->where('department_id', $request->user()->department_id))
+        ->count();
+
+    // Calculate minimum required respondents
+    $minRequired = 0;
+    if ($totalTransactions > 0) {
+        $numerator = $totalTransactions * 384.16;
+        $denominator = ($totalTransactions - 1) + 384.16;
+        $minRequired = (int) ceil($numerator / $denominator);
+    }
+    $status = $totalResponses >= $minRequired ? 'met' : 'below';
+
+    // Statistics (unchanged)
     $statistics = $this->getSurveyStatistics($filters, $request->user());
-$transactionStats = $this->getTransactionStatistics($filters, $request->user());
-$regionStatistics = $this->getRegionStatistics($filters, $request->user());
+    $transactionStats = $this->getTransactionStatistics($filters, $request->user());
+    $regionStatistics = $this->getRegionStatistics($filters, $request->user());
     $filterOptions = $this->getFilterOptions();
-    
 
     $serviceOptions = [
         'Internal Service 1 – Issuance of Certificates',
@@ -75,14 +82,13 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
         'filters' => $filters,
         'sortField' => $sortField,
         'sortDirection' => $sortDirection,
-        'totalResponses' => Respondent::where('completed_survey', true)
-    ->whereHas('service', fn($q) => $q->where('department_id', $request->user()->department_id))
-    ->count(),
-'totalTransactions' => Respondent::whereHas('service', fn($q) => $q->where('department_id', $request->user()->department_id))
-    ->count(),
+        'totalResponses' => $totalResponses,
+        'totalTransactions' => $totalTransactions,
+        'minRequired' => $minRequired,
+        'status' => $status,
     ]);
 }
-    
+
     /**
      * Get transaction statistics
      */
@@ -154,7 +160,7 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
         'surveyCompletion' => $surveyCompletion,
     ];
 }
-    
+
     /**
      * Get survey statistics for charts (only completed surveys)
      */
@@ -162,7 +168,7 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
     {
         $query = Respondent::where('completed_survey', true);
         $query = $this->scopeByDepartment($query, $user);
-    
+
         // Apply same filters for statistics
         foreach ($filters as $key => $value) {
             if (!empty($value) && in_array($key, ['client_type', 'sex', 'region', 'service_availed', 'date_from', 'date_to'])) {
@@ -177,11 +183,11 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
                 }
             }
         }
-    
+
         // Get all respondents for age calculation
         $allRespondents = $query->get();
         $total = $allRespondents->count();
-        
+
         // Calculate age groups using collection methods
         $ageGroups = [
             '18 and below' => $allRespondents->where('age', '<=', 18)->count(),
@@ -191,7 +197,7 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
             '46-60' => $allRespondents->whereBetween('age', [46, 60])->count(),
             '61+' => $allRespondents->where('age', '>=', 61)->count(),
         ];
-    
+
         // Calculate client types
         $clientTypes = $allRespondents->groupBy('client_type')
             ->map(function ($group) {
@@ -199,14 +205,14 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
             })
             ->sortDesc()
             ->toArray();
-    
+
         // Calculate sex distribution
         $sexDistribution = $allRespondents->groupBy('sex')
             ->map(function ($group) {
                 return $group->count();
             })
             ->toArray();
-    
+
         // Calculate region distribution (top 10)
         $regionDistribution = $allRespondents->groupBy('region_of_residence')
             ->map(function ($group) {
@@ -215,7 +221,7 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
             ->sortDesc()
             ->take(10)
             ->toArray();
-    
+
         // Calculate service distribution
         $serviceDistribution = $allRespondents->groupBy('service_availed')
             ->map(function ($group) {
@@ -223,7 +229,7 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
             })
             ->sortDesc()
             ->toArray();
-    
+
         // Calculate monthly trend
         $monthlyTrend = $allRespondents->groupBy(function ($item) {
                 return $item->date_of_transaction->format('Y-m');
@@ -233,7 +239,7 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
             })
             ->sortKeys()
             ->toArray();
-    
+
         return [
             'ageGroups' => $ageGroups,
             'clientTypes' => $clientTypes,
@@ -244,7 +250,7 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
             'total' => $total,
         ];
     }
-    
+
 
     /**
      * Get filter options for dropdowns.
@@ -286,25 +292,25 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
         ];
 
         $query = Respondent::query();
-        
+
         // Apply filters if present
         $filters = $request->only(['age_group', 'client_type', 'sex', 'region', 'service_availed', 'date_from', 'date_to']);
-        
+
         foreach ($filters as $key => $value) {
             if (!empty($value)) {
                 $query->where($key, $value);
             }
         }
-        
+
         $responses = $query->get();
 
         $callback = function() use($responses) {
             $file = fopen('php://output', 'w');
-            
+
             // Headers
             fputcsv($file, [
-                'ID', 'Date of Transaction', 'Client Type', 'Gender', 'Age', 
-                'Region of Residence', 'Service Availed', 'Suggestions', 'Email', 
+                'ID', 'Date of Transaction', 'Client Type', 'Gender', 'Age',
+                'Region of Residence', 'Service Availed', 'Suggestions', 'Email',
                 'Created At', 'Age Group'
             ]);
 
@@ -403,7 +409,7 @@ $regionStatistics = $this->getRegionStatistics($filters, $request->user());
 
 
 
-    
+
     /**
      * Apply filters to query
      */

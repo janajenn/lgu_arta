@@ -57,7 +57,9 @@ export default function Dashboard({
     sortDirection,
     totalResponses,
     totalTransactions,
-    regionStatistics = null
+    regionStatistics = null,
+    minRequired,
+    status
 }) {
     const [searchTerm, setSearchTerm] = useState(filters?.search || '');
     const [showFilters, setShowFilters] = useState(false);
@@ -66,6 +68,18 @@ export default function Dashboard({
     const [exporting, setExporting] = useState(false);
     const [chartType, setChartType] = useState('bar');
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
+    const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+
+
+
+
+useEffect(() => {
+    if (status === 'below') {
+        setShowInsufficientModal(true);
+    }
+}, [status]);
+
+
 
     useEffect(() => {
         setLocalFilters(filters || {});
@@ -179,8 +193,8 @@ export default function Dashboard({
         }
 
         return Object.entries(transactionStats.transactionsPerService).map(([service, count]) => {
-            const percentage = transactionStats.totalTransactions > 0 
-                ? ((count / transactionStats.totalTransactions) * 100).toFixed(1) 
+            const percentage = transactionStats.totalTransactions > 0
+                ? ((count / transactionStats.totalTransactions) * 100).toFixed(1)
                 : 0;
             const serviceName = service.split('–')[1]?.trim() || service;
             const shortName = serviceName.length > 30 ? serviceName.substring(0, 30) + '...' : serviceName;
@@ -204,8 +218,8 @@ export default function Dashboard({
     const mostPopularTransactionService = transactionServiceData.length > 0 ? transactionServiceData[0] : null;
 
     // Calculate completion rate
-    const completionRate = totalTransactions > 0 
-        ? ((totalResponses / totalTransactions) * 100).toFixed(1) 
+    const completionRate = totalTransactions > 0
+        ? ((totalResponses / totalTransactions) * 100).toFixed(1)
         : 0;
 
     // Calculate average daily transactions
@@ -249,22 +263,53 @@ export default function Dashboard({
         }))
     };
 
+
+
     return (
         <DepartmentHeadLayout>
             <Head title="Survey Responses Dashboard" /> {/* Optional: override layout title */}
 
+
+
             <div className="mb-6">
+
+                {/* Flash message for insufficient responses */}
+{status === 'below' && (
+    <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+        <div className="flex items-start">
+            <div className="flex-shrink-0">
+                <ExclamationCircleIcon className="h-5 w-5 text-red-400" />
+            </div>
+            <div className="ml-3 flex-1">
+                <p className="text-sm text-red-700">
+                    Your department currently has <span className="font-bold">{totalResponses}</span> survey responses,
+                    but the statistically recommended minimum is <span className="font-bold">{minRequired}</span> based on your
+                    total transactions (<span className="font-bold">{totalTransactions}</span>).
+                    Please encourage more customers to complete the survey.
+                </p>
+            </div>
+            <button
+                onClick={() => setShowInsufficientModal(true)}
+                className="ml-4 flex-shrink-0 text-sm font-medium text-red-700 hover:text-red-600 underline"
+            >
+                Learn more
+            </button>
+        </div>
+    </div>
+)}
+
+
     <h1 className="text-3xl font-bold text-gray-900">
         {auth.user.department_name || 'Department'} Dashboard
     </h1>
     <p className="text-gray-600">Welcome back, {auth.user.name}!</p>
 </div>
-            
+
             {/* Main Content - now placed inside layout's children */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 {/* New Department Button moved inside content */}
                 <div className="mb-6 flex justify-end">
-                   
+
                 </div>
 
                 {/* Enhanced Summary Cards with Transaction Data */}
@@ -278,7 +323,9 @@ export default function Dashboard({
                         <p className="text-3xl font-bold mb-1">{totalTransactions?.toLocaleString() || 0}</p>
                         <p className="text-blue-100 text-sm">All service requests recorded</p>
                     </div>
-                    
+
+
+
                     <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-xl p-6 text-white">
                         <div className="flex items-center justify-between mb-4">
                             <UsersIcon className="h-10 w-10 text-emerald-100" />
@@ -288,7 +335,7 @@ export default function Dashboard({
                         <p className="text-3xl font-bold mb-1">{totalResponses?.toLocaleString() || 0}</p>
                         <p className="text-emerald-100 text-sm">Feedback forms completed</p>
                     </div>
-                    
+
                     <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
                         <div className="flex items-center justify-between mb-4">
                             <ArrowTrendingUpIcon className="h-10 w-10 text-purple-100" />
@@ -298,7 +345,7 @@ export default function Dashboard({
                         <p className="text-3xl font-bold mb-1">{completionRate}%</p>
                         <p className="text-purple-100 text-sm">Of transactions completed survey</p>
                     </div>
-                    
+
                     <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl shadow-xl p-6 text-white">
                         <div className="flex items-center justify-between mb-4">
                             <ClockIcon className="h-10 w-10 text-amber-100" />
@@ -328,7 +375,7 @@ export default function Dashboard({
                                 {transactionServiceData.length} services
                             </div>
                         </div>
-                        
+
                         {transactionServiceData.length > 0 ? (
                             <div className="space-y-4">
                                 {transactionServiceData.map((service, index) => (
@@ -356,7 +403,7 @@ export default function Dashboard({
                                         </div>
                                     </div>
                                 ))}
-                                
+
                                 <div className="pt-4 border-t border-gray-200">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-semibold text-gray-700">Total Transactions</span>
@@ -388,7 +435,7 @@ export default function Dashboard({
                                 {serviceChartData.length} services
                             </div>
                         </div>
-                        
+
                         {serviceChartData.length > 0 ? (
                             <div className="space-y-4">
                                 {serviceChartData.map((service, index) => (
@@ -416,7 +463,7 @@ export default function Dashboard({
                                         </div>
                                     </div>
                                 ))}
-                                
+
                                 <div className="pt-4 border-t border-gray-200">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-semibold text-gray-700">Total Survey Responses</span>
@@ -455,7 +502,7 @@ export default function Dashboard({
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="p-6">
                             <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -464,14 +511,14 @@ export default function Dashboard({
                                         margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                                     >
                                         <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
-                                        <XAxis 
-                                            dataKey="date" 
+                                        <XAxis
+                                            dataKey="date"
                                             angle={-45}
                                             textAnchor="end"
                                             height={50}
                                             tick={{ fontSize: 11 }}
                                         />
-                                        <YAxis 
+                                        <YAxis
                                             label={{
                                                 value: 'Transactions',
                                                 angle: -90,
@@ -499,7 +546,7 @@ export default function Dashboard({
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
-                            
+
                             {/* Trend Summary */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -807,7 +854,7 @@ export default function Dashboard({
                     )}
                 </div>
 
-                
+
                 {/* Hourly Distribution Section */}
                 {transactionStats?.hourlyDistribution && Object.keys(transactionStats.hourlyDistribution).length > 0 && (
                     <div className="bg-white rounded-2xl shadow-xl mb-6 overflow-hidden border border-gray-100">
@@ -829,7 +876,7 @@ export default function Dashboard({
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="p-6">
                             <div className="grid grid-cols-4 md:grid-cols-8 lg:grid-cols-12 gap-3">
                                 {Object.entries(transactionStats.hourlyDistribution)
@@ -841,16 +888,16 @@ export default function Dashboard({
                                     .map(([hour, count], index) => {
                                         const maxCount = Math.max(...Object.values(transactionStats.hourlyDistribution));
                                         const heightPercentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
-                                        
+
                                         const hour24 = parseInt(hour.split(':')[0]);
                                         const hour12 = hour24 % 12 || 12;
                                         const period = hour24 >= 12 ? 'PM' : 'AM';
                                         const displayHour = `${hour12}${period}`;
-                                        
+
                                         return (
                                             <div key={hour} className="text-center">
                                                 <div className="mb-2">
-                                                    <div 
+                                                    <div
                                                         className="mx-auto w-8 bg-gradient-to-t from-amber-500 to-amber-600 rounded-t-lg transition-all duration-300 hover:from-amber-600 hover:to-amber-700"
                                                         style={{ height: `${Math.max(20, heightPercentage * 2)}px` }}
                                                         title={`${displayHour}: ${count} transactions (${hour} PH Time)`}
@@ -862,7 +909,7 @@ export default function Dashboard({
                                         );
                                     })}
                             </div>
-                            
+
                             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="bg-gray-50 p-4 rounded-lg">
                                     <div className="text-sm text-gray-600 mb-1">Peak Hour</div>
@@ -871,7 +918,7 @@ export default function Dashboard({
                                             const peakEntry = Object.entries(transactionStats.hourlyDistribution)
                                                 .reduce((a, b) => a[1] > b[1] ? a : b, ['00:00', 0]);
                                             if (peakEntry[1] === 0) return 'N/A';
-                                            
+
                                             const hour24 = parseInt(peakEntry[0].split(':')[0]);
                                             const hour12 = hour24 % 12 || 12;
                                             const period = hour24 >= 12 ? 'PM' : 'AM';
@@ -899,7 +946,7 @@ export default function Dashboard({
                                         {(() => {
                                             const maxCount = Math.max(...Object.values(transactionStats.hourlyDistribution));
                                             if (maxCount === 0) return 'N/A';
-                                            
+
                                             const busyHours = Object.entries(transactionStats.hourlyDistribution)
                                                 .filter(([_, count]) => count > maxCount * 0.5)
                                                 .map(([hour]) => {
@@ -909,7 +956,7 @@ export default function Dashboard({
                                                     return `${hour12}${period}`;
                                                 })
                                                 .join(', ');
-                                            
+
                                             return busyHours || 'N/A';
                                         })()}
                                     </div>
@@ -1676,6 +1723,65 @@ export default function Dashboard({
                     </div>
                 </div>
             )}
+
+
+            {/* Insufficient Responses Modal */}
+{showInsufficientModal && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-start justify-center p-4 pt-16">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-red-100">
+                <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center">
+                        <ExclamationCircleIcon className="h-6 w-6 text-red-600" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900">Survey Response Alert</h3>
+                        <p className="text-sm text-gray-600">Action needed</p>
+                    </div>
+                </div>
+            </div>
+            <div className="p-6">
+                <p className="text-gray-700 mb-4">
+                    Your department currently has <span className="font-bold">{totalResponses}</span> survey responses,
+                    but the statistically recommended minimum is <span className="font-bold">{minRequired}</span> based on your
+                    total transactions (<span className="font-bold">{totalTransactions}</span>).
+                </p>
+                <p className="text-gray-700 mb-6">
+                    To ensure reliable and representative results, please encourage more customers to complete the survey.
+                </p>
+                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">Current progress</span>
+                        <span className="text-sm font-bold text-gray-900">{Math.round((totalResponses / minRequired) * 100)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div
+                            className="bg-red-600 h-2.5 rounded-full"
+                            style={{ width: `${Math.min((totalResponses / minRequired) * 100, 100)}%` }}
+                        ></div>
+                    </div>
+                </div>
+                <div className="flex space-x-3">
+                    <button
+                        onClick={() => setShowInsufficientModal(false)}
+                        className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                        Dismiss
+                    </button>
+                    <button
+                        onClick={() => {
+                            // Optional: navigate to a page with tips or QR code
+                            setShowInsufficientModal(false);
+                        }}
+                        className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors"
+                    >
+                        Learn how to get more responses
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+)}
         </DepartmentHeadLayout>
     );
 }

@@ -1,4 +1,4 @@
-import { useForm, usePage } from '@inertiajs/react';
+import { useForm, usePage, Link } from '@inertiajs/react';
 import {
     BuildingOfficeIcon,
     UserIcon,
@@ -10,27 +10,81 @@ import {
     EyeSlashIcon,
     CloudArrowUpIcon,
 } from '@heroicons/react/24/outline';
-import DepartmentHeadLayout from '../../Shared/Layouts/DepartmentHeadLayout';
-import { useState } from 'react';
+import DepartmentHeadLayout from '../../../Shared/Layouts/DepartmentHeadLayout';
+import { useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 
-export default function CreateDepartment() {
+export default function EditDepartment({ department }) {
     const { flash } = usePage().props;
-    const { data, setData, post, processing, errors, reset } = useForm({
-        department_name: '',
-        department_description: '',
-        logo: null,
-        user_name: '',
-        user_email: '',
+
+    // Transform the department data into the form structure
+    const initialServices = department.services.map(s => ({
+        id: s.id, // keep id to identify existing services
+        name: s.name,
+        description: s.description || '',
+        category: s.category || 'internal',
+    }));
+
+    const { data, setData, put, processing, errors, reset } = useForm({
+        department_name: department.name,
+        department_description: department.description || '',
+        logo: null, // will be a File object when changed
+        user_name: department.head?.name || '',
+        user_email: department.head?.email || '',
         user_password: '',
         user_password_confirmation: '',
-        // Each service now has a 'category' field, defaulting to 'internal'
-        services: [{ name: '', description: '', category: 'internal' }],
+        services: initialServices.length ? initialServices : [{ name: '', description: '', category: 'internal' }],
     });
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [logoPreview, setLogoPreview] = useState(null);
+    const [logoPreview, setLogoPreview] = useState(department.logo ? `/storage/${department.logo}` : null);
+    const [keepExistingLogo, setKeepExistingLogo] = useState(true);
+
+
+    // Store initial data to compare changes
+const initialFormData = useMemo(() => ({
+    department_name: department.name,
+    department_description: department.description || '',
+    user_name: department.head?.name || '',
+    user_email: department.head?.email || '',
+    services: department.services.map(s => ({
+        id: s.id,
+        name: s.name,
+        description: s.description || '',
+        category: s.category || 'internal',
+    })),
+    logo: null, // we ignore logo in comparison because it's a file; changes will be detected separately
+}), [department]);
+
+// Check if any field has changed (except logo)
+const hasChanges = useMemo(() => {
+    // Compare department name/description
+    if (data.department_name !== initialFormData.department_name) return true;
+    if (data.department_description !== initialFormData.department_description) return true;
+
+    // Compare head info
+    if (data.user_name !== initialFormData.user_name) return true;
+    if (data.user_email !== initialFormData.user_email) return true;
+    if (data.user_password !== '' || data.user_password_confirmation !== '') return true; // password fields filled
+
+    // Compare services (simple length and content check)
+    if (data.services.length !== initialFormData.services.length) return true;
+    for (let i = 0; i < data.services.length; i++) {
+        const s1 = data.services[i];
+        const s2 = initialFormData.services[i];
+        if (!s2) return true;
+        if (s1.name !== s2.name) return true;
+        if (s1.description !== s2.description) return true;
+        if (s1.category !== s2.category) return true;
+    }
+
+    // Check if new logo selected
+    if (data.logo !== null) return true;
+
+    return false;
+}, [data, initialFormData]);
+
 
     const handleLogoChange = (e) => {
         const file = e.target.files[0];
@@ -39,10 +93,14 @@ export default function CreateDepartment() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setLogoPreview(reader.result);
+                setKeepExistingLogo(false);
             };
             reader.readAsDataURL(file);
         } else {
-            setLogoPreview(null);
+            // If user cancels, revert to existing logo
+            setLogoPreview(department.logo ? `/storage/${department.logo}` : null);
+            setData('logo', null);
+            setKeepExistingLogo(true);
         }
     };
 
@@ -67,15 +125,29 @@ export default function CreateDepartment() {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('department-head.departments.store'), {
+        if (!hasChanges) {
+            Swal.fire({
+                icon: 'info',
+                title: 'No Changes',
+                text: 'You haven\'t made any changes to update.',
+                timer: 3000,
+            });
+            return;
+        }
+
+        // If no new logo is selected, remove the logo field from the request
+        // The backend will ignore it and keep the existing one.
+        if (!data.logo) {
+            delete data.logo;
+        }
+
+        put(route('department-head.departments.update', department.id), {
             forceFormData: true,
             onSuccess: () => {
-                reset();
-                setLogoPreview(null);
                 Swal.fire({
                     icon: 'success',
                     title: 'Success!',
-                    text: 'Department, Department Head, and services created successfully.',
+                    text: 'Department updated successfully.',
                     timer: 3000,
                     showConfirmButton: true,
                 });
@@ -93,13 +165,12 @@ export default function CreateDepartment() {
     };
 
     return (
-        <DepartmentHeadLayout title="Create Department">
+        <DepartmentHeadLayout title={`Edit ${department.name}`}>
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
                 <div className="mb-8">
-                    <h2 className="text-3xl font-bold text-gray-900">Create New Department</h2>
+                    <h2 className="text-3xl font-bold text-gray-900">Edit Department</h2>
                     <p className="mt-2 text-gray-600">
-                        Fill in the details below to register a new department, assign a department head, and list the services offered.
+                        Update the department details, department head information, and services.
                     </p>
                 </div>
 
@@ -160,7 +231,7 @@ export default function CreateDepartment() {
                                             />
                                             <div className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-500 flex items-center justify-between">
                                                 <span className="truncate">
-                                                    {data.logo ? data.logo.name : 'Choose a PNG file...'}
+                                                    {data.logo ? data.logo.name : (keepExistingLogo ? 'Current logo (keep)' : 'Choose a new PNG file...')}
                                                 </span>
                                                 <CloudArrowUpIcon className="h-5 w-5 text-gray-400" />
                                             </div>
@@ -227,7 +298,7 @@ export default function CreateDepartment() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Password <span className="text-red-500">*</span>
+                                        Password <span className="text-gray-400">(leave blank to keep current)</span>
                                     </label>
                                     <div className="relative">
                                         <KeyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -236,7 +307,7 @@ export default function CreateDepartment() {
                                             value={data.user_password}
                                             onChange={e => setData('user_password', e.target.value)}
                                             className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
-                                            placeholder="••••••••"
+                                            placeholder="New password (optional)"
                                         />
                                         <button
                                             type="button"
@@ -247,12 +318,11 @@ export default function CreateDepartment() {
                                         </button>
                                     </div>
                                     {errors.user_password && <p className="mt-1 text-sm text-red-600">{errors.user_password}</p>}
-                                    <p className="mt-1 text-xs text-gray-500">Minimum 8 characters, mixed case, numbers, and symbols recommended.</p>
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Confirm Password <span className="text-red-500">*</span>
+                                        Confirm Password
                                     </label>
                                     <div className="relative">
                                         <KeyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -261,7 +331,7 @@ export default function CreateDepartment() {
                                             value={data.user_password_confirmation}
                                             onChange={e => setData('user_password_confirmation', e.target.value)}
                                             className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
-                                            placeholder="••••••••"
+                                            placeholder="Confirm new password"
                                         />
                                         <button
                                             type="button"
@@ -306,7 +376,7 @@ export default function CreateDepartment() {
                             <div className="space-y-4">
                                 {data.services.map((service, index) => (
                                     <div
-                                        key={index}
+                                        key={service.id || `new-${index}`}
                                         className="relative border border-gray-200 rounded-xl p-5 bg-gray-50 hover:shadow-md transition-shadow"
                                     >
                                         <div className="absolute -top-2 -left-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -339,7 +409,7 @@ export default function CreateDepartment() {
                                                 )}
                                             </div>
 
-                                            {/* New Category Dropdown */}
+                                            {/* Category Dropdown */}
                                             <div>
                                                 <label className="block text-xs font-medium text-gray-600 mb-1">
                                                     Category <span className="text-red-500">*</span>
@@ -380,13 +450,12 @@ export default function CreateDepartment() {
 
                     {/* Form Actions */}
                     <div className="flex justify-end space-x-4 pt-6">
-                        <button
-                            type="button"
-                            onClick={() => window.history.back()}
+                        <Link
+                            href={route('department-head.departments.index')}
                             className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm"
                         >
                             Cancel
-                        </button>
+                        </Link>
                         <button
                             type="submit"
                             disabled={processing}
@@ -398,10 +467,10 @@ export default function CreateDepartment() {
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                     </svg>
-                                    Creating...
+                                    Updating...
                                 </>
                             ) : (
-                                'Create Department & User'
+                                'Update Department'
                             )}
                         </button>
                     </div>

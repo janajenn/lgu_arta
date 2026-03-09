@@ -15,6 +15,11 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+
+    'tracking_pin' => env('TRACKING_PIN', '2026'),
+
+    'lgu_name' => env('LGU_NAME', 'LGU Opol'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

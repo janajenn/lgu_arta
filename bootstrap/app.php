@@ -12,19 +12,20 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,  
+            \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         // Register middleware aliases
         $middleware->alias([
             'check.account.type' => \App\Http\Middleware\CheckAccountTypeMiddleware::class,
-            'hr' => \App\Http\Middleware\IsHrUser::class, 
+            'hr' => \App\Http\Middleware\IsHrUser::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
-        
+
         // Or add it to the web middleware group if you want it to run on all web requests
         // $middleware->appendToGroup('web', \App\Http\Middleware\CheckAccountTypeMiddleware::class);
-        
+
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {

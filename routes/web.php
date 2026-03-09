@@ -10,8 +10,11 @@ use App\Http\Controllers\DepartmentHead\DashboardController as DepartmentHeadDas
 use App\Http\Controllers\DepartmentHead\DepartmentUserController;
 use App\Http\Controllers\PermaSurveyController;
 use App\Http\Controllers\PermaReportController;
-
+use App\Http\Controllers\DepartmentHead\ReportsController;
+use App\Http\Controllers\Admin\AdminReportsController;
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Auth\HrLoginController;
+use  App\Http\Controllers\DepartmentHead\TrackingController;
 
 // Public department selection (landing page)
 Route::get('/', [App\Http\Controllers\Public\DepartmentController::class, 'index'])->name('public.departments');
@@ -66,7 +69,7 @@ Route::get('/hr/login', [App\Http\Controllers\Auth\HrLoginController::class, 'cr
 Route::post('/hr/login', [App\Http\Controllers\Auth\HrLoginController::class, 'store'])->name('hr.login.store');
 
 
-    
+
 });
 
 // Authenticated routes with account validation
@@ -102,7 +105,7 @@ Route::middleware(['auth'])->group(function () {
         // Department Head Dashboard
         Route::get('/department-head/dashboard', [\App\Http\Controllers\DepartmentHead\DashboardController::class, 'index'])
             ->name('department-head.dashboard');
-        
+
         // Export route
         Route::get('/department-head/export', [\App\Http\Controllers\DepartmentHead\DashboardController::class, 'export'])
             ->name('department-head.export');
@@ -128,7 +131,58 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/department-head/departments/{department}', [\App\Http\Controllers\DepartmentHead\DepartmentController::class, 'show'])
     ->name('department-head.departments.show');
 
-    
+
+    Route::get('/department-head/departments/{department}/edit', [\App\Http\Controllers\DepartmentHead\DepartmentController::class, 'edit'])
+    ->name('department-head.departments.edit');
+Route::put('/department-head/departments/{department}', [\App\Http\Controllers\DepartmentHead\DepartmentController::class, 'update'])
+    ->name('department-head.departments.update');
+
+
+
+
+    // HR Reports (overall)
+Route::get('/department-head/reports', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'index'])
+->name('department-head.reports.index');
+
+Route::get('/department-head/reports/service-summary', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'serviceSummary'])
+->name('department-head.reports.service-summary');
+
+Route::get('/department-head/reports/age-distribution', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'ageDistribution'])
+->name('department-head.reports.age-distribution');
+
+Route::get('/department-head/reports/client-type-distribution', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'clientTypeDistribution'])
+->name('department-head.reports.client-type-distribution');
+
+
+Route::get('/department-head/reports/cc-sqd-summary', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'ccSqdSummary'])
+    ->name('department-head.reports.cc-sqd-summary');
+
+
+    Route::get('/department-head/reports/region-distribution', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'regionDistribution'])
+    ->name('department-head.reports.region-distribution');
+
+
+    Route::get('/department-head/reports/gender-distribution', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'genderDistribution'])
+    ->name('department-head.reports.gender-distribution');
+
+    Route::get('/department-head/reports/summary-of-result', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'summaryOfResult'])
+    ->name('department-head.reports.summary-of-result');
+
+
+    Route::get('/department-head/reports/service-ratings', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'serviceRatings'])
+    ->name('department-head.reports.service-ratings');
+
+
+
+
+
+
+    Route::post('/department-head/verify-pin', [\App\Http\Controllers\DepartmentHead\TrackingController::class, 'verifyPin'])
+    ->name('department-head.verify-pin');
+Route::get('/department-head/track-departments', [\App\Http\Controllers\DepartmentHead\TrackingController::class, 'index'])
+    ->name('department-head.track-departments');
+
+
     });
 
 
@@ -144,8 +198,20 @@ Route::get('/department-head/departments/{department}', [\App\Http\Controllers\D
     });
 
 
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
+    // Reports index page (selection)
+    Route::get('/reports', [AdminReportsController::class, 'index'])->name('reports.index');
 
+    // Individual reports – all using the same controller
+    Route::get('/reports/age-distribution', [AdminReportsController::class, 'ageDistribution'])->name('reports.age-distribution');
+    Route::get('/reports/client-type-distribution', [AdminReportsController::class, 'clientTypeDistribution'])->name('reports.client-type-distribution');
+    Route::get('/reports/gender-distribution', [AdminReportsController::class, 'genderDistribution'])->name('reports.gender-distribution');
+    Route::get('/reports/region-distribution', [AdminReportsController::class, 'regionDistribution'])->name('reports.region-distribution');
+    Route::get('/reports/service-summary', [AdminReportsController::class, 'serviceSummary'])->name('reports.service-summary');
+    Route::get('/reports/cc-sqd-summary', [AdminReportsController::class, 'ccSqdSummary'])->name('reports.cc-sqd-summary');
+});
 
 
 

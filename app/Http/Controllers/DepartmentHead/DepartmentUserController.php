@@ -16,58 +16,68 @@ use Illuminate\Validation\Rules\Password;
 class DepartmentUserController extends Controller
 {
     public function store(Request $request)
-    {
-        // Authorization check (optional)
-        // if (!auth()->user()->is_hr_department) {
-        //     abort(403);
-        // }
+{
+    // Authorization: Uncomment when HR check is implemented
+    // if (!auth()->user()->isHr()) {
+    //     abort(403, 'Only HR can manage departments.');
+    // }
 
-        $validated = $request->validate([
-            'department_name' => 'required|string|max:255|unique:departments,name',
-            'department_description' => 'nullable|string|max:500',
-            'logo' => 'required|image|mimes:png|max:2048', // PNG only, max 2MB
-            'user_name' => 'required|string|max:255',
-            'user_email' => 'required|string|email|max:255|unique:users,email',
-            'user_password' => ['required', 'confirmed', Password::defaults()],
-            'services' => 'required|array|min:1',
-            'services.*.name' => 'required|string|max:255',
-            'services.*.description' => 'nullable|string|max:500',
-        ]);
+    $validated = $request->validate([
+        // Department fields
+        'department_name' => 'required|string|max:255|unique:departments,name',
+        'department_description' => 'nullable|string|max:500',
+        'logo' => 'required|image|mimes:png|max:2048', // PNG only, max 2MB
 
-        // Store logo
-        $logoPath = $request->file('logo')->store('logos', 'public');
+        // Department Head fields
+        'user_name' => 'required|string|max:255',
+        'user_email' => 'required|string|email|max:255|unique:users,email',
+        'user_password' => ['required', 'confirmed', Password::defaults()],
 
-        try {
-            DB::transaction(function () use ($validated, $logoPath) {
-                $department = Department::create([
-                    'name' => $validated['department_name'],
-                    'description' => $validated['department_description'] ?? null,
-                    'logo' => $logoPath,
+        // Services fields (now with category)
+        'services' => 'required|array|min:1',
+        'services.*.name' => 'required|string|max:255',
+        'services.*.description' => 'nullable|string|max:500',
+        'services.*.category' => 'required|in:internal,external', // NEW rule
+    ]);
+
+    // Store logo
+    $logoPath = $request->file('logo')->store('logos', 'public');
+
+    try {
+        DB::transaction(function () use ($validated, $logoPath) {
+            // Create department
+            $department = Department::create([
+                'name' => $validated['department_name'],
+                'description' => $validated['department_description'] ?? null,
+                'logo' => $logoPath,
+            ]);
+
+            // Create department head user
+            $user = User::create([
+                'name' => $validated['user_name'],
+                'email' => $validated['user_email'],
+                'password' => Hash::make($validated['user_password']),
+                'department_id' => $department->id,
+                'role' => 'department_head', // Adjust if you have a role column
+            ]);
+
+            // Create services with category
+            foreach ($validated['services'] as $serviceData) {
+                $department->services()->create([
+                    'name' => $serviceData['name'],
+                    'description' => $serviceData['description'] ?? null,
+                    'category' => $serviceData['category'], // NEW field
                 ]);
-
-                $user = User::create([
-                    'name' => $validated['user_name'],
-                    'email' => $validated['user_email'],
-                    'password' => Hash::make($validated['user_password']),
-                    'department_id' => $department->id,
-                    'role' => 'department_head',
-                ]);
-
-                foreach ($validated['services'] as $serviceData) {
-                    $department->services()->create([
-                        'name' => $serviceData['name'],
-                        'description' => $serviceData['description'] ?? null,
-                    ]);
-                }
-            });
-        } catch (\Exception $e) {
-            // Delete uploaded logo if transaction failed
-            Storage::disk('public')->delete($logoPath);
-            throw $e;
-        }
-
-        return redirect()->back()->with('success', 'Department, Department Head, and services created successfully.');
+            }
+        });
+    } catch (\Exception $e) {
+        // Delete uploaded logo if transaction failed
+        Storage::disk('public')->delete($logoPath);
+        throw $e;
     }
+
+    return redirect()->back()->with('success', 'Department, Department Head, and services created successfully.');
+}
 
     public function create()
     {

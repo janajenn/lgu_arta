@@ -1,5 +1,6 @@
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import PinVerificationModal from '@/Components/PinVerificationModal'; // adjust path as needed
 
 export default function DepartmentHeadLayout({ children, title = null }) {
     const { auth } = usePage().props;
@@ -8,6 +9,7 @@ export default function DepartmentHeadLayout({ children, title = null }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [pinModalOpen, setPinModalOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -25,26 +27,30 @@ export default function DepartmentHeadLayout({ children, title = null }) {
         return currentPath === itemPath;
     };
 
+    // Base navigation items
     const navigation = [
-        { name: 'Dashboard', href: route('department-head.dashboard'), icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-        { name: 'Reports', href: '#', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-        { name: 'Analytics', href: route('department-head.analytics'), icon: 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z' },
+        { name: 'Dashboard for HRMO', href: route('department-head.dashboard'), icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+        { name: 'Analytics for HRMO', href: route('department-head.analytics'), icon: 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z' },
         { name: 'Departments', href: route('department-head.departments.index'), icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
+        { name: 'Overall Reports', href: route('department-head.reports.index'), icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
     ];
 
-    // Filter out Departments tab if user is not HR
-    const visibleNavigation = navigation.filter(item => {
-        if (item.name === 'Departments' && !user?.is_hr_department) {
-            return false;
-        }
-        return true;
-    });
+    // Add Track Departments only for HR users
+    if (user?.is_hr_department) {
+        navigation.push({
+            name: 'Track Departments',
+            action: () => setPinModalOpen(true),
+            icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z',
+        });
+    }
 
-    // Add active state based on current URL
-    const navWithActive = visibleNavigation.map(item => ({
-        ...item,
-        current: isActive(item.href)
-    }));
+    // Add active state based on current URL (for href items only)
+    const navWithActive = navigation.map(item => {
+        if (item.href) {
+            return { ...item, current: isActive(item.href) };
+        }
+        return { ...item, current: false };
+    });
 
     const currentPage = title || navWithActive.find(item => item.current)?.name || 'Dashboard';
 
@@ -118,30 +124,57 @@ export default function DepartmentHeadLayout({ children, title = null }) {
                         <div className="flex-1 overflow-y-auto py-6">
                             <nav className="px-3 space-y-1">
                                 {navWithActive.map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.href}
-                                        className={`group relative flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                                            item.current
-                                                ? 'bg-emerald-500/20 text-emerald-700'
-                                                : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
-                                        }`}
-                                    >
-                                        {item.current && (
-                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-emerald-500 rounded-r-full shadow-lg shadow-emerald-500/30" />
-                                        )}
-                                        <svg
-                                            className={`mr-3 h-5 w-5 transition-colors duration-200 ${
-                                                item.current ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-600'
+                                    item.action ? (
+                                        <button
+                                            key={item.name}
+                                            onClick={item.action}
+                                            className={`group relative flex items-center px-3 py-2.5 text-sm font-medium rounded-lg w-full text-left transition-all duration-200 ${
+                                                item.current
+                                                    ? 'bg-emerald-500/20 text-emerald-700'
+                                                    : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
                                             }`}
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
                                         >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                                        </svg>
-                                        {item.name}
-                                    </Link>
+                                            {item.current && (
+                                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-emerald-500 rounded-r-full shadow-lg shadow-emerald-500/30" />
+                                            )}
+                                            <svg
+                                                className={`mr-3 h-5 w-5 transition-colors duration-200 ${
+                                                    item.current ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-600'
+                                                }`}
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                                            </svg>
+                                            {item.name}
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            key={item.name}
+                                            href={item.href}
+                                            className={`group relative flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                                item.current
+                                                    ? 'bg-emerald-500/20 text-emerald-700'
+                                                    : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
+                                            }`}
+                                        >
+                                            {item.current && (
+                                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-emerald-500 rounded-r-full shadow-lg shadow-emerald-500/30" />
+                                            )}
+                                            <svg
+                                                className={`mr-3 h-5 w-5 transition-colors duration-200 ${
+                                                    item.current ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-600'
+                                                }`}
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                                            </svg>
+                                            {item.name}
+                                        </Link>
+                                    )
                                 ))}
                             </nav>
                         </div>
@@ -189,28 +222,55 @@ export default function DepartmentHeadLayout({ children, title = null }) {
                                 </div>
                                 <nav className="mt-5 px-2 space-y-1">
                                     {navWithActive.map((item) => (
-                                        <Link
-                                            key={item.name}
-                                            href={item.href}
-                                            className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${
-                                                item.current
-                                                    ? 'bg-emerald-500/20 text-emerald-700'
-                                                    : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
-                                            }`}
-                                            onClick={() => setSidebarOpen(false)}
-                                        >
-                                            <svg
-                                                className={`mr-4 h-6 w-6 ${
-                                                    item.current ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-600'
+                                        item.action ? (
+                                            <button
+                                                key={item.name}
+                                                onClick={() => {
+                                                    setSidebarOpen(false);
+                                                    item.action();
+                                                }}
+                                                className={`group flex items-center px-2 py-2 text-base font-medium rounded-md w-full text-left ${
+                                                    item.current
+                                                        ? 'bg-emerald-500/20 text-emerald-700'
+                                                        : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
                                                 }`}
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
                                             >
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                                            </svg>
-                                            {item.name}
-                                        </Link>
+                                                <svg
+                                                    className={`mr-4 h-6 w-6 ${
+                                                        item.current ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-600'
+                                                    }`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                                                </svg>
+                                                {item.name}
+                                            </button>
+                                        ) : (
+                                            <Link
+                                                key={item.name}
+                                                href={item.href}
+                                                className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${
+                                                    item.current
+                                                        ? 'bg-emerald-500/20 text-emerald-700'
+                                                        : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
+                                                }`}
+                                                onClick={() => setSidebarOpen(false)}
+                                            >
+                                                <svg
+                                                    className={`mr-4 h-6 w-6 ${
+                                                        item.current ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-600'
+                                                    }`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                                                </svg>
+                                                {item.name}
+                                            </Link>
+                                        )
                                     ))}
                                 </nav>
                             </div>
@@ -256,6 +316,15 @@ export default function DepartmentHeadLayout({ children, title = null }) {
                         </div>
                     </div>
                 </main>
+
+                {/* PIN Verification Modal */}
+                <PinVerificationModal
+                    isOpen={pinModalOpen}
+                    onClose={() => setPinModalOpen(false)}
+                    onSuccess={() => {
+                        router.get(route('department-head.track-departments'));
+                    }}
+                />
             </div>
         </>
     );

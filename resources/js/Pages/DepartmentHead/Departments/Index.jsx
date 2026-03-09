@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import DepartmentHeadLayout from '../../../Shared/Layouts/DepartmentHeadLayout';
-import { BuildingOfficeIcon, EyeIcon, UserIcon } from '@heroicons/react/24/outline';
+import { BuildingOfficeIcon, EyeIcon, PencilIcon, UserIcon } from '@heroicons/react/24/outline';
 
 export default function Index({ departments }) {
     return (
@@ -21,24 +21,12 @@ export default function Index({ departments }) {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Department Name
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Description
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Department Head
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Services
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Created
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Head</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Services</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -61,7 +49,10 @@ export default function Index({ departments }) {
                                         )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        <span
+                                            className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 cursor-default"
+                                            title={`Internal: ${dept.internal_services_count}, External: ${dept.external_services_count}`}
+                                        >
                                             {dept.services_count} services
                                         </span>
                                     </td>
@@ -69,13 +60,22 @@ export default function Index({ departments }) {
                                         {dept.created_at}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <Link
-                                            href={route('department-head.departments.show', dept.id)}
-                                            className="inline-flex items-center text-blue-600 hover:text-blue-900"
-                                        >
-                                            <EyeIcon className="h-4 w-4 mr-1" />
-                                            View
-                                        </Link>
+                                        <div className="flex space-x-3">
+                                            <Link
+                                                href={route('department-head.departments.show', dept.id)}
+                                                className="inline-flex items-center text-blue-600 hover:text-blue-900"
+                                            >
+                                                <EyeIcon className="h-4 w-4 mr-1" />
+                                                View
+                                            </Link>
+                                            <Link
+                                                href={route('department-head.departments.edit', dept.id)}
+                                                className="inline-flex items-center text-amber-600 hover:text-amber-900"
+                                            >
+                                                <PencilIcon className="h-4 w-4 mr-1" />
+                                                Edit
+                                            </Link>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

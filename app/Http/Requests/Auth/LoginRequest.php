@@ -49,18 +49,6 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        // Check if user is active or has required role (optional)
-        $user = Auth::user();
-        
-        // Optional: Add additional checks here if needed
-        // Example: Check if user account is active
-        // if (!$user->is_active) {
-        //     Auth::logout();
-        //     throw ValidationException::withMessages([
-        //         'email' => 'Your account has been deactivated.',
-        //     ]);
-        // }
-
         RateLimiter::clear($this->throttleKey());
     }
 
