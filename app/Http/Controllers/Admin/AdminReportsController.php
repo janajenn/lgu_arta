@@ -655,4 +655,312 @@ protected function getBaseQuery(Request $request)
         return $query;
     }
 
+
+    /**
+ * Display the summary of results report.
+ */
+public function summaryOfResult(Request $request)
+{
+    $this->authorizeAdmin($request);
+
+    $startDate = $request->get('start_date');
+    $endDate = $request->get('end_date');
+
+    $respondentIds = Respondent::where('completed_survey', true)
+        ->when($startDate && $endDate, fn($q) => $q->whereBetween('date_of_transaction', [$startDate, $endDate]))
+        ->pluck('id');
+
+    $totalResponses = $respondentIds->count();
+    $totalTransactions = Respondent::when($startDate && $endDate, fn($q) => $q->whereBetween('date_of_transaction', [$startDate, $endDate]))
+        ->count();
+
+    // CC percentages
+    $ccPercentages = [];
+    $ccQuestions = ['CC1', 'CC2', 'CC3'];
+    foreach ($ccQuestions as $customId) {
+        $question = SurveyQuestion::where('custom_id', $customId)->first();
+        if (!$question) {
+            $ccPercentages[$customId] = 0;
+            continue;
+        }
+
+        $count = SurveyResponse::where('question_id', $question->id)
+            ->whereIn('respondent_id', $respondentIds)
+            ->where('answer_value', '1')
+            ->count();
+
+        $ccPercentages[$customId] = $totalResponses > 0 ? round(($count / $totalResponses) * 100, 2) : 0;
+    }
+
+    // Overall SQD satisfaction score
+    $sqdQuestions = SurveyQuestion::where('custom_id', 'like', 'SQD%')->get();
+    $totalPositive = 0;
+    $totalValid = 0;
+
+    foreach ($sqdQuestions as $question) {
+        $responses = SurveyResponse::where('question_id', $question->id)
+            ->whereIn('respondent_id', $respondentIds)
+            ->get();
+
+        foreach ($responses as $response) {
+            $answer = $response->answer_value;
+            if (str_contains($answer, 'Strongly Agree')) {
+                $totalPositive++;
+                $totalValid++;
+            } elseif (str_contains($answer, 'Agree') && !str_contains($answer, 'Strongly')) {
+                $totalPositive++;
+                $totalValid++;
+            } elseif (str_contains($answer, 'Neither') || str_contains($answer, 'Wala Mouyon o Dili Mouyon')) {
+                $totalValid++;
+            } elseif (str_contains($answer, 'Disagree') && !str_contains($answer, 'Strongly')) {
+                $totalValid++;
+            } elseif (str_contains($answer, 'Strongly Disagree')) {
+                $totalValid++;
+            } // N/A excluded
+        }
+    }
+
+    $overallScore = $totalValid > 0 ? round(($totalPositive / $totalValid) * 100, 2) : 0;
+    $responseRate = $totalTransactions > 0 ? round(($totalResponses / $totalTransactions) * 100, 2) : 0;
+
+    $metrics = [
+        'cc_awareness'   => $ccPercentages['CC1'],
+        'cc_visibility'  => $ccPercentages['CC2'],
+        'cc_helpfulness' => $ccPercentages['CC3'],
+        'response_rate'  => $responseRate,
+        'overall_score'  => $overallScore,
+    ];
+
+    $insightParagraph = $this->generateInsightParagraph($metrics, $totalResponses, $totalTransactions);
+
+    return Inertia::render('Admin/Reports/SummaryOfResult', [
+        'metrics'          => $metrics,
+        'insightParagraph' => $insightParagraph,
+        'totalResponses'   => $totalResponses,
+        'totalTransactions'=> $totalTransactions,
+    ]);
+}
+
+/**
+ * Generate a dynamic insight paragraph based on metrics.
+ */
+private function generateInsightParagraph($metrics, $totalResponses, $totalTransactions)
+{
+    // LGU name – can be set in config/app.php or env
+    $lguName = config('app.lgu_name', 'LGU Opol');
+
+    // Thresholds for qualitative descriptors
+    $thresholds = [
+        'very_low'  => [0, 30],
+        'low'       => [31, 50],
+        'moderate'  => [51, 70],
+        'high'      => [71, 89],
+        'very_high' => [90, 100],
+    ];
+
+    $getDescriptor = function($value) use ($thresholds) {
+        foreach ($thresholds as $key => [$min, $max]) {
+            if ($value >= $min && $value <= $max) return $key;
+        }
+        return 'moderate';
+    };
+
+    $adjectives = [
+        'very_low'  => ['very low', 'extremely low', 'concerning', 'minimal'],
+        'low'       => ['low', 'below average', 'limited', 'modest'],
+        'moderate'  => ['moderate', 'satisfactory', 'acceptable', 'fair'],
+        'high'      => ['high', 'strong', 'commendable', 'impressive'],
+        'very_high' => ['very high', 'exceptional', 'outstanding', 'remarkable'],
+    ];
+
+    $templates = [
+        'cc_awareness' => [
+            'CC awareness is {adjective} at {value}%, indicating {interpretation}.',
+            'Awareness of the Citizen’s Charter stands at {value}%, which is {adjective}. {interpretation}',
+            'The survey shows {adjective} CC awareness ({value}%), {interpretation}.',
+        ],
+        'cc_visibility' => [
+            'CC visibility is {adjective} at {value}%, meaning {interpretation}.',
+            'At {value}%, the visibility of the Citizen’s Charter is {adjective}. {interpretation}',
+            'Respondents rated CC visibility as {adjective} ({value}%), {interpretation}.',
+        ],
+        'cc_helpfulness' => [
+            'CC helpfulness is {adjective} at {value}%, suggesting {interpretation}.',
+            'Helpfulness of the Citizen’s Charter scored {value}%, which is {adjective}. {interpretation}',
+            'With {value}%, CC helpfulness is {adjective}, {interpretation}.',
+        ],
+        'response_rate' => [
+            'The response rate is {adjective} at {value}%, {interpretation}.',
+            'At {value}%, the response rate is {adjective}, indicating {interpretation}.',
+            'A {adjective} response rate of {value}% was achieved, {interpretation}.',
+        ],
+        'overall_score' => [
+            'Overall satisfaction is {adjective} at {value}%, reflecting {interpretation}.',
+            'The overall satisfaction score of {value}% is {adjective}, {interpretation}.',
+            'Clients rated their overall experience as {adjective} ({value}%), {interpretation}.',
+        ],
+    ];
+
+    $interpretations = [
+        'cc_awareness' => [
+            'very_low'  => 'many clients are unaware of the Citizen’s Charter, highlighting a need for better information dissemination.',
+            'low'       => 'awareness is limited; efforts to promote the Charter should be intensified.',
+            'moderate'  => 'a fair proportion of clients know about the Charter, but there is room for improvement.',
+            'high'      => 'most clients are aware of the Charter, indicating effective communication.',
+            'very_high' => 'awareness is nearly universal, a testament to excellent public information campaigns.',
+        ],
+        'cc_visibility' => [
+            'very_low'  => 'the Charter is hard to find, which may hinder transparency.',
+            'low'       => 'visibility could be improved to make the Charter more accessible.',
+            'moderate'  => 'the Charter is reasonably visible, but enhancements could benefit clients.',
+            'high'      => 'the Charter is easily seen by most clients, supporting transparency.',
+            'very_high' => 'the Charter is prominently displayed and easily noticed by almost all clients.',
+        ],
+        'cc_helpfulness' => [
+            'very_low'  => 'the Charter is not helping clients as intended; a review of its content may be needed.',
+            'low'       => 'helpfulness is limited; clarifying the Charter’s information could improve this.',
+            'moderate'  => 'the Charter provides fair guidance, though some clients may still find it lacking.',
+            'high'      => 'most clients find the Charter helpful in navigating transactions.',
+            'very_high' => 'the Charter is extremely useful, greatly assisting clients in their transactions.',
+        ],
+        'response_rate' => [
+            'very_low'  => 'participation is very low, which may affect the reliability of results.',
+            'low'       => 'response rate is below ideal; more encouragement may be needed.',
+            'moderate'  => 'a satisfactory number of clients participated, providing a decent data set.',
+            'high'      => 'a strong response rate ensures the findings are representative.',
+            'very_high' => 'an outstanding response rate gives high confidence in the results.',
+        ],
+        'overall_score' => [
+            'very_low'  => 'overall satisfaction is concerning; service improvements are urgently needed.',
+            'low'       => 'satisfaction is below expectations; areas for improvement should be identified.',
+            'moderate'  => 'satisfaction is acceptable, but there is potential to do better.',
+            'high'      => 'clients are generally satisfied, indicating good service delivery.',
+            'very_high' => 'exceptionally high satisfaction reflects excellent service quality.',
+        ],
+    ];
+
+    $intro = "In compliance with ARTA Memorandum Circular No. 2022-05, as amended by ARTA Memorandum Circular No. 2023-05, and further supplemented by Joint Memorandum Circular No. 1, Series of 2023, the {$lguName} conducted its Client Satisfaction Measurement (CSM) to assess the quality of service delivery across various frontline services. This report presents the findings, analysis, and recommendations based on the CSM survey conducted during the specified period.";
+
+    $sentences = [];
+    $metricKeys = ['cc_awareness', 'cc_visibility', 'cc_helpfulness', 'response_rate', 'overall_score'];
+    foreach ($metricKeys as $key) {
+        $value = $metrics[$key];
+        $descriptor = $getDescriptor($value);
+        $adjList = $adjectives[$descriptor];
+        $adjective = $adjList[array_rand($adjList)];
+
+        $templateList = $templates[$key];
+        $template = $templateList[array_rand($templateList)];
+
+        $interpretation = $interpretations[$key][$descriptor] ?? '';
+
+        $sentence = str_replace(
+            ['{adjective}', '{value}', '{interpretation}'],
+            [$adjective, $value, $interpretation],
+            $template
+        );
+        $sentences[] = $sentence;
+    }
+
+    $conclusion = "These results reaffirm {$lguName}'s commitment to delivering efficient, transparent, and citizen-centered public services.";
+
+    return $intro . " " . implode(' ', $sentences) . " " . $conclusion;
+}
+
+/**
+ * Display service satisfaction ratings.
+ */
+public function serviceRatings(Request $request)
+{
+    $this->authorizeAdmin($request);
+
+    $startDate = $request->get('start_date');
+    $endDate = $request->get('end_date');
+
+    $services = Service::all();
+
+    $serviceRatings = [];
+    $overallPositive = 0;
+    $overallValid = 0;
+
+    foreach ($services as $service) {
+        $respondentIds = Respondent::where('service_availed', $service->name)
+            ->where('completed_survey', true)
+            ->when($startDate && $endDate, fn($q) => $q->whereBetween('date_of_transaction', [$startDate, $endDate]))
+            ->pluck('id');
+
+        if ($respondentIds->isEmpty()) {
+            $serviceRatings[] = [
+                'name'     => $service->name,
+                'category' => $service->category,
+                'rating'   => null,
+                'positive' => 0,
+                'valid'    => 0,
+            ];
+            continue;
+        }
+
+        $sqdQuestions = SurveyQuestion::where('custom_id', 'like', 'SQD%')->get();
+
+        $positive = 0;
+        $valid = 0;
+
+        foreach ($sqdQuestions as $question) {
+            $responses = SurveyResponse::where('question_id', $question->id)
+                ->whereIn('respondent_id', $respondentIds)
+                ->get();
+
+            foreach ($responses as $response) {
+                $answer = $response->answer_value;
+                if (str_contains($answer, 'Strongly Agree')) {
+                    $positive++;
+                    $valid++;
+                } elseif (str_contains($answer, 'Agree') && !str_contains($answer, 'Strongly')) {
+                    $positive++;
+                    $valid++;
+                } elseif (str_contains($answer, 'Neither') || str_contains($answer, 'Wala Mouyon o Dili Mouyon')) {
+                    $valid++;
+                } elseif (str_contains($answer, 'Disagree') && !str_contains($answer, 'Strongly')) {
+                    $valid++;
+                } elseif (str_contains($answer, 'Strongly Disagree')) {
+                    $valid++;
+                }
+                // N/A is excluded
+            }
+        }
+
+        $rating = $valid > 0 ? round(($positive / $valid) * 100, 2) : null;
+
+        $serviceRatings[] = [
+            'name'     => $service->name,
+            'category' => $service->category,
+            'rating'   => $rating,
+            'positive' => $positive,
+            'valid'    => $valid,
+        ];
+
+        $overallPositive += $positive;
+        $overallValid   += $valid;
+    }
+
+    $overallRating = $overallValid > 0 ? round(($overallPositive / $overallValid) * 100, 2) : null;
+
+    return Inertia::render('Admin/Reports/ServiceRatings', [
+        'serviceRatings' => $serviceRatings,
+        'overallRating'  => $overallRating,
+        'startDate'      => $startDate,
+        'endDate'        => $endDate,
+    ]);
+}
+
+/**
+ * Authorize admin user.
+ */
+private function authorizeAdmin(Request $request)
+{
+    if (!$request->user() || !$request->user()->isAdmin()) {
+        abort(403, 'Unauthorized.');
+    }
+}
+
 }

@@ -2,6 +2,8 @@ import { Head, Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { HomeIcon, ChartBarIcon, ArrowLeftOnRectangleIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
+import Swal from 'sweetalert2';
+
 export default function AdminLayout({ children, title = null }) {
     const { auth } = usePage().props;
     const user = auth.user;
@@ -14,9 +16,26 @@ export default function AdminLayout({ children, title = null }) {
     }, []);
 
     const handleLogout = (e) => {
-        e.preventDefault();
-        router.post(route('logout'));
-    };
+    e.preventDefault();
+    Swal.fire({
+        title: 'Confirm Logout',
+        text: 'Are you sure you want to logout?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, logout',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        background: '#fff',
+        backdrop: true,
+        allowOutsideClick: false,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.post(route('logout'));
+        }
+    });
+};
 
     const isActive = (href) => {
         if (!mounted) return false;

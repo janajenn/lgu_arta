@@ -40,7 +40,6 @@ export default function ReportsIndex({ totalClientsSurveyed, totalTransactions }
             route: route('admin.reports.cc-sqd-summary'),
             color: 'purple',
         },
-
         {
             name: 'Region Distribution',
             description: 'Geographic distribution of respondents by region.',
@@ -54,6 +53,20 @@ export default function ReportsIndex({ totalClientsSurveyed, totalTransactions }
             icon: UsersIcon,
             route: route('admin.reports.gender-distribution'),
             color: 'pink',
+        },
+        {
+            name: 'Summary of Result',
+            description: 'Overall CC metrics, response rate, and satisfaction score with insights.',
+            icon: DocumentTextIcon,
+            route: route('admin.reports.summary-of-result'),
+            color: 'indigo',
+        },
+        {
+            name: 'Service Ratings',
+            description: 'Satisfaction ratings for each service based on SQD responses.',
+            icon: ChartBarIcon,
+            route: route('admin.reports.service-ratings'),
+            color: 'teal',
         }
     ];
 
@@ -62,7 +75,7 @@ export default function ReportsIndex({ totalClientsSurveyed, totalTransactions }
             <Head title="Reports" />
 
             <div className="space-y-8">
-                {/* Info note */}
+                {/* Info note (optional – can be customized for admin) */}
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
                     <div className="flex items-start">
                         <div className="flex-shrink-0">
@@ -70,13 +83,7 @@ export default function ReportsIndex({ totalClientsSurveyed, totalTransactions }
                         </div>
                         <div className="ml-3 flex-1">
                             <p className="text-sm text-blue-700">
-                                All reports shown here are aggregated across all departments.{' '}
-                                <Link
-                                    href={route('department-head.departments.index')}
-                                    className="font-medium underline text-blue-700 hover:text-blue-600"
-                                >
-                                    View all departments →
-                                </Link>
+                                All reports shown here are aggregated across all departments.
                             </p>
                         </div>
                     </div>

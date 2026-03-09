@@ -19,7 +19,20 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
         responses: {},
         suggestions: '',
         email: ''
+
+
+
     });
+
+    const requiredQuestionIds = [
+    ...firstSetQuestions.map(q => q.custom_id),
+    ...secondSetQuestions.map(q => q.custom_id)
+];
+
+
+const allQuestionsAnswered = requiredQuestionIds.every(id =>
+    data.responses[id] !== undefined && data.responses[id] !== ''
+);
 
     const [isBisaya, setIsBisaya] = useState(false);
 
@@ -237,6 +250,19 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
         'business': 'Business',
         'government': 'Government'
     };
+
+
+    const sqdBisayaTexts = {
+    SQD0: "SQD0. Nalipay ko sa serbisyo nga akong nadawat.",
+    SQD1: "SQD1. Makataronganon ang oras nga akong gigugol sa akong transaksyon.",
+    SQD2: "SQD2. Gisunod sa opisina ang mga kinahanglanon sa transaksyon ug ako gihatagan og kompleto nga impormasyon.",
+    SQD3: "SQD3. Ang mga lakang (lakip ang pagbayad) nga akong gikinahanglan buhaton dali rang sundon.",
+    SQD4: "SQD4. Dali ra nako nakit-an ang impormasyon bahin sa akong transaksyon gikan sa opisina o sa ilang website.",
+    SQD5: "SQD5. Makataronganon ang mga bayranan nga akong gibayad para sa akong transaksyon.",
+    SQD6: "SQD6. Gibati nako nga patas ang opisina sa tanan, o 'walay palakasan'.",
+    SQD7: "SQD7. Maayo og pagtratar ang mga staff, ug ako gihatagan og oportunidad sa pagkompleto sa akong transaksyon.",
+    SQD8: "SQD8. Nakuha nako ang akong gikinahanglan gikan sa opisina sa gobyerno.",
+};
 
     const t = isBisaya ? translations : english;
 
@@ -622,19 +648,19 @@ console.log('Initial service_availed:', initialService);
 
                                 {/* SQD Table */}
 
-                                {/* Rating Legend (Sticky) */}
-<div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-red-200 p-3 mb-2 rounded-t-xl shadow-md">
-  <div className="flex flex-wrap gap-3 justify-center text-xs sm:text-sm">
-    {responseOptions.map(opt => (
-      <div key={opt.value} className="flex items-center space-x-1 bg-red-50 px-3 py-1 rounded-full">
-        <span className="font-bold text-red-700">{opt.short}</span>
-        <span className="text-gray-700">=</span>
-        <span className="text-gray-600">{opt.label}</span>
-      </div>
-    ))}
-  </div>
+{/* Rating Legend (Sticky) - keep as is but maybe reduce padding */}
+<div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-red-200 p-2 sm:p-3 mb-2 rounded-t-xl shadow-md">
+    <div className="flex flex-wrap gap-1 sm:gap-3 justify-center text-xs sm:text-sm">
+        {responseOptions.map(opt => (
+            <div key={opt.value} className="flex items-center space-x-1 bg-red-50 px-2 sm:px-3 py-1 rounded-full">
+                <span className="font-bold text-red-700 text-xs sm:text-sm">{opt.short}</span>
+                <span className="text-gray-700 hidden sm:inline">=</span>
+                <span className="text-gray-600 hidden sm:inline text-xs">{opt.label}</span>
+            </div>
+        ))}
+    </div>
 </div>
-<div className="overflow-auto rounded-xl border border-gray-200 relative max-h-96">
+<div className="hidden sm:block overflow-auto rounded-xl border border-gray-200 relative max-h-96">
   <table className="min-w-full divide-y divide-gray-200">
     <thead className="sticky top-0 z-10 bg-gradient-to-r from-red-50 to-red-100">
       <tr>
@@ -659,13 +685,13 @@ console.log('Initial service_availed:', initialService);
         <tr key={question.custom_id} className="hover:bg-red-50 transition-colors duration-200">
           {/* Sticky first cell in each row */}
           <td className="sticky left-0 z-10 px-4 py-4 whitespace-normal text-sm text-gray-800 bg-white">
-            <div className="flex items-start">
-              <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-600 font-bold text-xs mr-3 flex-shrink-0">
-                SQD{index}
-              </span>
-              <span>{question.question_text}</span>
-            </div>
-          </td>
+    <div className="flex items-start">
+        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-600 font-bold text-xs mr-3 flex-shrink-0">
+            SQD{index}
+        </span>
+        <span>{isBisaya ? sqdBisayaTexts[question.custom_id] || question.question_text : question.question_text}</span>
+    </div>
+</td>
           {responseOptions.map((option) => (
           <td key={`${question.custom_id}-${option.value}`} className="px-3 py-4 text-center">
           <label className="inline-flex items-center cursor-pointer group p-1 rounded-lg transition-colors duration-200 group-hover:bg-red-50">
@@ -689,6 +715,46 @@ console.log('Initial service_availed:', initialService);
   </table>
 </div>
 </div>
+
+{/* SQD Cards - visible on small screens */}
+{/* SQD Cards - visible on small screens */}
+<div className="block sm:hidden space-y-4">
+    {secondSetQuestions.map((question, index) => {
+        const questionText = isBisaya
+            ? sqdBisayaTexts[question.custom_id] || question.question_text
+            : question.question_text;
+        return (
+            <div key={question.custom_id} className="bg-white border border-red-200 rounded-xl p-4 shadow-sm">
+                <div className="flex items-start mb-3">
+                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-600 font-bold text-xs mr-2 flex-shrink-0">
+                        SQD{index}
+                    </span>
+                    <h4 className="text-sm font-medium text-gray-800">{questionText}</h4>
+                </div>
+                <div className="space-y-2">
+                    {responseOptions.map((option) => (
+                        <label
+                            key={`${question.custom_id}-${option.value}`}
+                            className="flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-red-50 transition-colors"
+                        >
+                            <input
+                                type="radio"
+                                name={`question_${question.custom_id}`}
+                                value={option.value}
+                                checked={data.responses[question.custom_id] === option.value}
+                                onChange={() => handleResponseChange(question.custom_id, option.value)}
+                                className="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500 mr-3"
+                            />
+                            <span className="text-sm text-gray-700">{option.label}</span>
+                        </label>
+                    ))}
+                </div>
+            </div>
+        );
+    })}
+</div>
+
+
                             {/* Optional Suggestions and Email Card */}
                             <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-red-100">
                                 <div className="space-y-8">
@@ -781,11 +847,12 @@ console.log('Initial service_availed:', initialService);
                                         </p>
                                     </div>
 
+
                                     <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-red-700 bg-white hover:bg-red-50 rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
+    type="submit"
+    disabled={processing || !allQuestionsAnswered}
+    className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-red-700 bg-white hover:bg-red-50 rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+>
                                         {processing ? (
                                             <>
                                                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24">
@@ -803,6 +870,8 @@ console.log('Initial service_availed:', initialService);
                                             </>
                                         )}
                                     </button>
+
+
                                 </div>
 
                                 {/* Anti-Palakasan Reminder */}

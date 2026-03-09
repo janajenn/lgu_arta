@@ -2,6 +2,9 @@ import { Head, Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import PinVerificationModal from '@/Components/PinVerificationModal'; // adjust path as needed
 
+
+import Swal from 'sweetalert2';
+
 export default function DepartmentHeadLayout({ children, title = null }) {
     const { auth } = usePage().props;
     const user = auth.user;
@@ -15,10 +18,27 @@ export default function DepartmentHeadLayout({ children, title = null }) {
         setMounted(true);
     }, []);
 
-    const handleLogout = (e) => {
-        e.preventDefault();
-        router.post(route('logout'));
-    };
+const handleLogout = (e) => {
+    e.preventDefault();
+    Swal.fire({
+        title: 'Confirm Logout',
+        text: 'Are you sure you want to logout?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, logout',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        background: '#fff',
+        backdrop: true,
+        allowOutsideClick: false,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.post(route('logout'));
+        }
+    });
+};
 
     const isActive = (href) => {
         if (!mounted) return false;

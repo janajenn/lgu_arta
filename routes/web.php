@@ -211,6 +211,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/reports/region-distribution', [AdminReportsController::class, 'regionDistribution'])->name('reports.region-distribution');
     Route::get('/reports/service-summary', [AdminReportsController::class, 'serviceSummary'])->name('reports.service-summary');
     Route::get('/reports/cc-sqd-summary', [AdminReportsController::class, 'ccSqdSummary'])->name('reports.cc-sqd-summary');
+
+  Route::get('/reports/summary-of-result', [App\Http\Controllers\Admin\AdminReportsController::class, 'summaryOfResult'])
+    ->name('reports.summary-of-result');
+Route::get('/reports/service-ratings', [App\Http\Controllers\Admin\AdminReportsController::class, 'serviceRatings'])
+    ->name('reports.service-ratings');
 });
 
 
