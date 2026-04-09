@@ -629,131 +629,71 @@ console.log('Initial service_availed:', initialService);
                             </div>
 
                             {/* Service Assessment Card */}
-                            <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-red-100">
-                                <div className="flex items-center mb-6">
-                                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mr-4">
-                                        <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h2 className="text-xl font-bold text-gray-900">
-                                            {t.service_assessment}
-                                        </h2>
-                                        <p className="text-sm text-gray-600 mt-1">
-                                            {t.sqd_instructions}
-                                        </p>
-                                    </div>
-                                </div>
+<div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-red-100">
+  <div className="flex items-center mb-6">
+    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mr-4">
+      <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </div>
+    <div>
+      <h2 className="text-xl font-bold text-gray-900">{t.service_assessment}</h2>
+      <p className="text-sm text-gray-600 mt-1">{t.sqd_instructions}</p>
+    </div>
+  </div>
 
-                                {/* SQD Table */}
-
-{/* Rating Legend (Sticky) - keep as is but maybe reduce padding */}
-<div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-red-200 p-2 sm:p-3 mb-2 rounded-t-xl shadow-md">
+  {/* Rating Legend */}
+  <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-red-200 p-2 sm:p-3 mb-4 rounded-t-xl shadow-md">
     <div className="flex flex-wrap gap-1 sm:gap-3 justify-center text-xs sm:text-sm">
-        {responseOptions.map(opt => (
-            <div key={opt.value} className="flex items-center space-x-1 bg-red-50 px-2 sm:px-3 py-1 rounded-full">
-                <span className="font-bold text-red-700 text-xs sm:text-sm">{opt.short}</span>
-                <span className="text-gray-700 hidden sm:inline">=</span>
-                <span className="text-gray-600 hidden sm:inline text-xs">{opt.label}</span>
-            </div>
-        ))}
-    </div>
-</div>
-<div className="hidden sm:block overflow-auto rounded-xl border border-gray-200 relative max-h-96">
-  <table className="min-w-full divide-y divide-gray-200">
-    <thead className="sticky top-0 z-10 bg-gradient-to-r from-red-50 to-red-100">
-      <tr>
-        {/* Sticky first header cell */}
-        <th className="sticky left-0 z-10 px-4 py-4 text-left text-sm font-semibold text-gray-900 uppercase tracking-wider bg-gradient-to-r from-red-50 to-red-100">
-          {t.statement}
-        </th>
-        {responseOptions.map((option) => (
-  <th key={option.value} className="px-3 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
-    <div className="flex flex-col items-center">
-      {/* Full label: hidden on small and medium, visible on large+ */}
-      <span className="hidden lg:block">{option.label}</span>
-      {/* Short code: visible on small and medium, hidden on large+ */}
-      <span className="lg:hidden text-xs font-bold">{option.short}</span>
-    </div>
-  </th>
-))}
-      </tr>
-    </thead>
-    <tbody className="bg-white divide-y divide-gray-200">
-      {secondSetQuestions.map((question, index) => (
-        <tr key={question.custom_id} className="hover:bg-red-50 transition-colors duration-200">
-          {/* Sticky first cell in each row */}
-          <td className="sticky left-0 z-10 px-4 py-4 whitespace-normal text-sm text-gray-800 bg-white">
-    <div className="flex items-start">
-        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-600 font-bold text-xs mr-3 flex-shrink-0">
-            SQD{index}
-        </span>
-        <span>{isBisaya ? sqdBisayaTexts[question.custom_id] || question.question_text : question.question_text}</span>
-    </div>
-</td>
-          {responseOptions.map((option) => (
-          <td key={`${question.custom_id}-${option.value}`} className="px-3 py-4 text-center">
-          <label className="inline-flex items-center cursor-pointer group p-1 rounded-lg transition-colors duration-200 group-hover:bg-red-50">
-            <input
-              type="radio"
-              name={`question_${question.custom_id}`}
-              value={option.value}
-              checked={data.responses[question.custom_id] === option.value}
-              onChange={() => handleResponseChange(question.custom_id, option.value)}
-              className="h-4 w-4 md:h-5 md:w-5 border-2 border-gray-400 text-red-600 focus:ring-red-500 focus:ring-2 transition-all duration-300 checked:border-red-600 group-hover:border-red-400"
-            />
-            <span className="ml-2 lg:hidden text-xs font-medium text-gray-700">
-              {option.short}
-            </span>
-          </label>
-        </td>
-          ))}
-        </tr>
+      {responseOptions.map(opt => (
+        <div key={opt.value} className="flex items-center space-x-1 bg-red-50 px-2 sm:px-3 py-1 rounded-full">
+          <span className="font-bold text-red-700 text-xs sm:text-sm">{opt.short}</span>
+          <span className="text-gray-700 hidden sm:inline">=</span>
+          <span className="text-gray-600 hidden sm:inline text-xs">{opt.label}</span>
+        </div>
       ))}
-    </tbody>
-  </table>
-</div>
-</div>
+    </div>
+  </div>
 
-{/* SQD Cards - visible on small screens */}
-{/* SQD Cards - visible on small screens */}
-<div className="block sm:hidden space-y-4">
+  {/* Cards for all screen sizes */}
+  <div className="space-y-4">
     {secondSetQuestions.map((question, index) => {
-        const questionText = isBisaya
-            ? sqdBisayaTexts[question.custom_id] || question.question_text
-            : question.question_text;
-        return (
-            <div key={question.custom_id} className="bg-white border border-red-200 rounded-xl p-4 shadow-sm">
-                <div className="flex items-start mb-3">
-                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-600 font-bold text-xs mr-2 flex-shrink-0">
-                        SQD{index}
-                    </span>
-                    <h4 className="text-sm font-medium text-gray-800">{questionText}</h4>
-                </div>
-                <div className="space-y-2">
-                    {responseOptions.map((option) => (
-                        <label
-                            key={`${question.custom_id}-${option.value}`}
-                            className="flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-red-50 transition-colors"
-                        >
-                            <input
-                                type="radio"
-                                name={`question_${question.custom_id}`}
-                                value={option.value}
-                                checked={data.responses[question.custom_id] === option.value}
-                                onChange={() => handleResponseChange(question.custom_id, option.value)}
-                                className="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500 mr-3"
-                            />
-                            <span className="text-sm text-gray-700">{option.label}</span>
-                        </label>
-                    ))}
-                </div>
-            </div>
-        );
-    })}
-</div>
+      const safeId = question.custom_id?.trim() || `sqd-${index}`;
+      const questionText = isBisaya
+        ? sqdBisayaTexts[question.custom_id] || question.question_text
+        : question.question_text;
 
+      return (
+        <div key={safeId} className="bg-white border border-red-200 rounded-xl p-4 shadow-sm">
+          <div className="flex items-start mb-3">
+            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-600 font-bold text-xs mr-2 flex-shrink-0">
+              {safeId}
+            </span>
+            <h4 className="text-sm font-medium text-gray-800">{questionText}</h4>
+          </div>
+          <div className="space-y-2">
+            {responseOptions.map((option) => (
+              <label
+                key={`${safeId}-${option.value}`}
+                className="flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-red-50 transition-colors"
+              >
+                <input
+                  type="radio"
+                  name={`question_${safeId}`}
+                  value={option.value}
+                  checked={data.responses[question.custom_id] === option.value}
+                  onChange={() => handleResponseChange(question.custom_id, option.value)}
+                  className="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500 mr-3"
+                />
+                <span className="text-sm text-gray-700">{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</div>
 
                             {/* Optional Suggestions and Email Card */}
                             <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-red-100">
@@ -934,5 +874,10 @@ console.log('Initial service_availed:', initialService);
                 }
             `}</style>
         </>
+
+
+
     );
+
+    console.log('secondSetQuestions custom_ids:', secondSetQuestions.map(q => q.custom_id));
 }

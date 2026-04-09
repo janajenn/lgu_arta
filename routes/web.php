@@ -174,28 +174,39 @@ Route::get('/department-head/reports/cc-sqd-summary', [\App\Http\Controllers\Dep
 
 
 
+        // HR view of a specific department's dashboard and analytics
+Route::get('/department-head/dashboard/{department}', [\App\Http\Controllers\DepartmentHead\DashboardController::class, 'show'])
+    ->name('department-head.dashboard.show');
+Route::get('/department-head/analytics/{department}', [\App\Http\Controllers\DepartmentHead\AnalyticsController::class, 'show'])
+    ->name('department-head.analytics.show');
 
 
 
     Route::post('/department-head/verify-pin', [\App\Http\Controllers\DepartmentHead\TrackingController::class, 'verifyPin'])
     ->name('department-head.verify-pin');
-Route::get('/department-head/track-departments', [\App\Http\Controllers\DepartmentHead\TrackingController::class, 'index'])
+    Route::get('/department-head/track-departments', [\App\Http\Controllers\DepartmentHead\TrackingController::class, 'index'])
     ->name('department-head.track-departments');
 
-
     });
 
 
-    Route::middleware(['auth', 'hr'])->group(function () {
-        Route::get('/perma-reports', [PermaReportController::class, 'index'])->name('perma.reports');
 
 
-        Route::get('/perma-reports/{id}', [PermaReportController::class, 'show'])->name('perma.reports.show');
 
 
-        Route::get('/perma-reports/stats', [PermaReportController::class, 'stats'])->name('perma-reports.stats');
-        // Add other report routes here (e.g., show, export)
-    });
+
+    // Route::middleware(['auth', 'hr'])->group(function () {
+    //     Route::get('/perma-reports', [PermaReportController::class, 'index'])->name('perma.reports');
+
+
+    //     Route::get('/perma-reports/{id}', [PermaReportController::class, 'show'])->name('perma.reports.show');
+
+
+    //     Route::get('/perma-reports/stats', [PermaReportController::class, 'stats'])->name('perma-reports.stats');
+
+
+    //     // Add other report routes here (e.g., show, export)
+    // });
 
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

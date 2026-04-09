@@ -1,8 +1,15 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import DepartmentHeadLayout from '../../../Shared/Layouts/DepartmentHeadLayout';
-import { BuildingOfficeIcon, EyeIcon, PencilIcon, UserIcon } from '@heroicons/react/24/outline';
+import { BuildingOfficeIcon, EyeIcon, PencilIcon, ArrowTopRightOnSquareIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 
 export default function Index({ departments }) {
+    const { auth } = usePage().props;
+    const isHR = auth.user?.is_hr_department; // true if current user is HR
+
+    const handleRowClick = (deptId) => {
+        router.get(route('department-head.dashboard.show', deptId));
+    };
+
     return (
         <DepartmentHeadLayout title="Departments">
             <div className="max-w-7xl mx-auto">
@@ -17,13 +24,21 @@ export default function Index({ departments }) {
                     </Link>
                 </div>
 
+                {/* Info message – shown to everyone, but clarifies who can click */}
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 flex items-center">
+                    <ArrowTopRightOnSquareIcon className="h-4 w-4 mr-2" />
+                    {isHR
+                        ? 'Click any department row to view its dashboard and analytics.'
+                        : 'Only HR users can click to view department dashboards.'}
+                </div>
+
                 <div className="bg-white rounded-xl shadow overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Head</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Focal Person</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Services</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -31,9 +46,18 @@ export default function Index({ departments }) {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {departments.map((dept) => (
-                                <tr key={dept.id} className="hover:bg-gray-50">
+                                <tr
+                                    key={dept.id}
+                                    className={`transition-colors ${isHR ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                                    onClick={isHR ? () => handleRowClick(dept.id) : undefined}
+                                >
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm font-medium text-gray-900">{dept.name}</div>
+                                        <div className="text-sm font-medium text-gray-900 flex items-center">
+                                            {dept.name}
+                                            {!isHR && (
+                                                <LockClosedIcon className="h-4 w-4 ml-2 text-gray-400" title="Only HR can access dashboard" />
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="text-sm text-gray-500 truncate max-w-xs">{dept.description || '—'}</div>
@@ -60,7 +84,7 @@ export default function Index({ departments }) {
                                         {dept.created_at}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div className="flex space-x-3">
+                                        <div className="flex space-x-3" onClick={(e) => e.stopPropagation()}>
                                             <Link
                                                 href={route('department-head.departments.show', dept.id)}
                                                 className="inline-flex items-center text-blue-600 hover:text-blue-900"

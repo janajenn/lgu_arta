@@ -106,7 +106,7 @@ export default function Show({ department }) {
                                 <div className="bg-gray-50/70 rounded-xl p-5 border border-gray-100">
                                     <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center">
                                         <UserIcon className="h-4 w-4 mr-1 text-gray-400" />
-                                        Department Head
+                                        Focal Person
                                     </h2>
                                     {department.head ? (
                                         <div className="flex items-center gap-3">

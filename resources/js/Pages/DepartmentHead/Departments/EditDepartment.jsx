@@ -1,4 +1,4 @@
-import { useForm, usePage, Link } from '@inertiajs/react';
+import { useForm, usePage, Link, router } from '@inertiajs/react'; // removed formData
 import {
     BuildingOfficeIcon,
     UserIcon,
@@ -17,18 +17,17 @@ import Swal from 'sweetalert2';
 export default function EditDepartment({ department }) {
     const { flash } = usePage().props;
 
-    // Transform the department data into the form structure
     const initialServices = department.services.map(s => ({
-        id: s.id, // keep id to identify existing services
+        id: s.id,
         name: s.name,
         description: s.description || '',
         category: s.category || 'internal',
     }));
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, processing, errors } = useForm({
         department_name: department.name,
         department_description: department.description || '',
-        logo: null, // will be a File object when changed
+        logo: null,
         user_name: department.head?.name || '',
         user_email: department.head?.email || '',
         user_password: '',
@@ -40,55 +39,43 @@ export default function EditDepartment({ department }) {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [logoPreview, setLogoPreview] = useState(department.logo ? `/storage/${department.logo}` : null);
     const [keepExistingLogo, setKeepExistingLogo] = useState(true);
+    const [logoFile, setLogoFile] = useState(null);
 
+    const initialFormData = useMemo(() => ({
+        department_name: department.name,
+        department_description: department.description || '',
+        user_name: department.head?.name || '',
+        user_email: department.head?.email || '',
+        services: department.services.map(s => ({
+            id: s.id,
+            name: s.name,
+            description: s.description || '',
+            category: s.category || 'internal',
+        })),
+    }), [department]);
 
-    // Store initial data to compare changes
-const initialFormData = useMemo(() => ({
-    department_name: department.name,
-    department_description: department.description || '',
-    user_name: department.head?.name || '',
-    user_email: department.head?.email || '',
-    services: department.services.map(s => ({
-        id: s.id,
-        name: s.name,
-        description: s.description || '',
-        category: s.category || 'internal',
-    })),
-    logo: null, // we ignore logo in comparison because it's a file; changes will be detected separately
-}), [department]);
-
-// Check if any field has changed (except logo)
-const hasChanges = useMemo(() => {
-    // Compare department name/description
-    if (data.department_name !== initialFormData.department_name) return true;
-    if (data.department_description !== initialFormData.department_description) return true;
-
-    // Compare head info
-    if (data.user_name !== initialFormData.user_name) return true;
-    if (data.user_email !== initialFormData.user_email) return true;
-    if (data.user_password !== '' || data.user_password_confirmation !== '') return true; // password fields filled
-
-    // Compare services (simple length and content check)
-    if (data.services.length !== initialFormData.services.length) return true;
-    for (let i = 0; i < data.services.length; i++) {
-        const s1 = data.services[i];
-        const s2 = initialFormData.services[i];
-        if (!s2) return true;
-        if (s1.name !== s2.name) return true;
-        if (s1.description !== s2.description) return true;
-        if (s1.category !== s2.category) return true;
-    }
-
-    // Check if new logo selected
-    if (data.logo !== null) return true;
-
-    return false;
-}, [data, initialFormData]);
-
+    const hasChanges = useMemo(() => {
+        if (data.department_name !== initialFormData.department_name) return true;
+        if (data.department_description !== initialFormData.department_description) return true;
+        if (data.user_name !== initialFormData.user_name) return true;
+        if (data.user_email !== initialFormData.user_email) return true;
+        if (data.user_password !== '' || data.user_password_confirmation !== '') return true;
+        if (data.services.length !== initialFormData.services.length) return true;
+        for (let i = 0; i < data.services.length; i++) {
+            const s1 = data.services[i];
+            const s2 = initialFormData.services[i];
+            if (!s2) return true;
+            if (s1.name !== s2.name) return true;
+            if (s1.description !== s2.description) return true;
+            if (s1.category !== s2.category) return true;
+        }
+        if (logoFile !== null) return true;
+        return false;
+    }, [data, initialFormData, logoFile]);
 
     const handleLogoChange = (e) => {
         const file = e.target.files[0];
-        setData('logo', file);
+        setLogoFile(file);
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -97,9 +84,8 @@ const hasChanges = useMemo(() => {
             };
             reader.readAsDataURL(file);
         } else {
-            // If user cancels, revert to existing logo
             setLogoPreview(department.logo ? `/storage/${department.logo}` : null);
-            setData('logo', null);
+            setLogoFile(null);
             setKeepExistingLogo(true);
         }
     };
@@ -135,13 +121,32 @@ const hasChanges = useMemo(() => {
             return;
         }
 
-        // If no new logo is selected, remove the logo field from the request
-        // The backend will ignore it and keep the existing one.
-        if (!data.logo) {
-            delete data.logo;
+        const formData = new FormData();
+
+        formData.append('department_name', data.department_name);
+        formData.append('department_description', data.department_description || '');
+        formData.append('user_name', data.user_name);
+        formData.append('user_email', data.user_email);
+        if (data.user_password) {
+            formData.append('user_password', data.user_password);
+            formData.append('user_password_confirmation', data.user_password_confirmation);
+        }
+        if (logoFile) {
+            formData.append('logo', logoFile);
         }
 
-        put(route('department-head.departments.update', department.id), {
+        data.services.forEach((service, index) => {
+            formData.append(`services[${index}][name]`, service.name);
+            formData.append(`services[${index}][category]`, service.category);
+            formData.append(`services[${index}][description]`, service.description || '');
+            if (service.id) {
+                formData.append(`services[${index}][id]`, service.id);
+            }
+        });
+
+        const url = route('department-head.departments.update', department.id) + '?_method=PUT';
+
+        router.post(url, formData, {
             forceFormData: true,
             onSuccess: () => {
                 Swal.fire({
@@ -153,11 +158,22 @@ const hasChanges = useMemo(() => {
                 });
             },
             onError: () => {
+                const errorList = Object.entries(errors).map(([field, message]) => {
+                    const fieldName = field
+                        .replace('department_name', 'Department Name')
+                        .replace('department_description', 'Description')
+                        .replace('user_name', 'Full Name')
+                        .replace('user_email', 'Email')
+                        .replace('logo', 'Logo')
+                        .replace('services', 'Services');
+                    return `• ${fieldName}: ${message}`;
+                }).join('<br>');
+
                 Swal.fire({
                     icon: 'error',
                     title: 'Validation Error',
-                    text: 'Please check the form for errors and try again.',
-                    timer: 5000,
+                    html: errorList || 'Please check the form for errors and try again.',
+                    timer: 7000,
                     showConfirmButton: true,
                 });
             },
@@ -195,9 +211,7 @@ const hasChanges = useMemo(() => {
                                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                                     placeholder="e.g., Human Resources"
                                 />
-                                {errors.department_name && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.department_name}</p>
-                                )}
+                                {errors.department_name && <p className="mt-1 text-sm text-red-600">{errors.department_name}</p>}
                             </div>
 
                             <div>
@@ -211,14 +225,12 @@ const hasChanges = useMemo(() => {
                                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                                     placeholder="Brief description of the department's function..."
                                 />
-                                {errors.department_description && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.department_description}</p>
-                                )}
+                                {errors.department_description && <p className="mt-1 text-sm text-red-600">{errors.department_description}</p>}
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Department Logo <span className="text-red-500">*</span> <span className="text-gray-400">(PNG only)</span>
+                                    Department Logo <span className="text-gray-400">(optional, PNG only)</span>
                                 </label>
                                 <div className="flex items-center space-x-4">
                                     <label className="flex-1 cursor-pointer">
@@ -231,7 +243,7 @@ const hasChanges = useMemo(() => {
                                             />
                                             <div className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-500 flex items-center justify-between">
                                                 <span className="truncate">
-                                                    {data.logo ? data.logo.name : (keepExistingLogo ? 'Current logo (keep)' : 'Choose a new PNG file...')}
+                                                    {logoFile ? logoFile.name : (keepExistingLogo ? 'Current logo (keep)' : 'Choose a new PNG file...')}
                                                 </span>
                                                 <CloudArrowUpIcon className="h-5 w-5 text-gray-400" />
                                             </div>
@@ -248,6 +260,9 @@ const hasChanges = useMemo(() => {
                                     )}
                                 </div>
                                 {errors.logo && <p className="mt-1 text-sm text-red-600">{errors.logo}</p>}
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Leave empty to keep the current logo. Only PNG files, max 2MB.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -257,7 +272,7 @@ const hasChanges = useMemo(() => {
                         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
                             <h3 className="text-lg font-semibold text-white flex items-center">
                                 <UserIcon className="h-5 w-5 mr-2" />
-                                Department Head Account
+                                Focal Person Account
                             </h3>
                         </div>
                         <div className="p-6 space-y-5">
@@ -409,7 +424,6 @@ const hasChanges = useMemo(() => {
                                                 )}
                                             </div>
 
-                                            {/* Category Dropdown */}
                                             <div>
                                                 <label className="block text-xs font-medium text-gray-600 mb-1">
                                                     Category <span className="text-red-500">*</span>

@@ -1,4 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import InsufficientResponsesModal from '@/Components/InsufficientResponsesModal';
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import {
@@ -42,11 +43,13 @@ import {
     QueueListIcon,
     BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
+
+
 import DepartmentHeadLayout from '../../Shared/Layouts/DepartmentHeadLayout'; // adjust the import path as needed
 
 
 export default function Dashboard({
-    auth,
+
     responses,
     statistics,
     transactionStats,
@@ -59,7 +62,8 @@ export default function Dashboard({
     totalTransactions,
     regionStatistics = null,
     minRequired,
-    status
+    status,
+    viewingDepartment,
 }) {
     const [searchTerm, setSearchTerm] = useState(filters?.search || '');
     const [showFilters, setShowFilters] = useState(false);
@@ -69,6 +73,16 @@ export default function Dashboard({
     const [chartType, setChartType] = useState('bar');
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
     const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+
+
+
+
+const { auth } = usePage().props;
+    const user = auth.user;
+
+    // Determine which department name to show
+    const departmentName = viewingDepartment?.name || user.department_name || 'Department';
+
 
 
 
@@ -265,9 +279,9 @@ useEffect(() => {
 
 
 
-    return (
-        <DepartmentHeadLayout>
-            <Head title="Survey Responses Dashboard" /> {/* Optional: override layout title */}
+   return (
+        <DepartmentHeadLayout title={`${departmentName} Dashboard`}>
+            <Head title={`${departmentName} Dashboard`} />
 
 
 
@@ -299,11 +313,36 @@ useEffect(() => {
 )}
 
 
+ <div className="mb-6">
+
+
+
+                {viewingDepartment && (
+    <div className="sticky top-16 z-20 mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg shadow-sm flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+            <EyeIcon className="h-5 w-5 text-blue-600" />
+            <p className="text-sm text-blue-800">
+                You are currently viewing the dashboard for <strong>{viewingDepartment.name}</strong>.
+            </p>
+        </div>
+        <Link
+            href={route('department-head.dashboard')}
+            className="inline-flex items-center px-3 py-1.5 bg-white border border-blue-300 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors"
+        >
+            Return to your dashboard
+        </Link>
+    </div>
+)}
+
+
     <h1 className="text-3xl font-bold text-gray-900">
-        {auth.user.department_name || 'Department'} Dashboard
-    </h1>
-    <p className="text-gray-600">Welcome back, {auth.user.name}!</p>
-</div>
+                    {departmentName} Dashboard
+                </h1>
+                <p className="text-gray-600">Welcome back, {user.name}!</p>
+            </div>
+             </div>
+
+
 
             {/* Main Content - now placed inside layout's children */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -1724,64 +1763,17 @@ useEffect(() => {
                 </div>
             )}
 
+<InsufficientResponsesModal
+            isOpen={showInsufficientModal}
+            onClose={() => setShowInsufficientModal(false)}
+            totalResponses={totalResponses}
+            minRequired={minRequired}
+            totalTransactions={totalTransactions}
+            // Optional: provide a handler for "Learn how to get more responses"
+            // onLearnMore={() => router.get(route('some.route'))}
+        />
 
-            {/* Insufficient Responses Modal */}
-{showInsufficientModal && (
-    <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-start justify-center p-4 pt-16">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-red-100">
-                <div className="flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center">
-                        <ExclamationCircleIcon className="h-6 w-6 text-red-600" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900">Survey Response Alert</h3>
-                        <p className="text-sm text-gray-600">Action needed</p>
-                    </div>
-                </div>
-            </div>
-            <div className="p-6">
-                <p className="text-gray-700 mb-4">
-                    Your department currently has <span className="font-bold">{totalResponses}</span> survey responses,
-                    but the statistically recommended minimum is <span className="font-bold">{minRequired}</span> based on your
-                    total transactions (<span className="font-bold">{totalTransactions}</span>).
-                </p>
-                <p className="text-gray-700 mb-6">
-                    To ensure reliable and representative results, please encourage more customers to complete the survey.
-                </p>
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">Current progress</span>
-                        <span className="text-sm font-bold text-gray-900">{Math.round((totalResponses / minRequired) * 100)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div
-                            className="bg-red-600 h-2.5 rounded-full"
-                            style={{ width: `${Math.min((totalResponses / minRequired) * 100, 100)}%` }}
-                        ></div>
-                    </div>
-                </div>
-                <div className="flex space-x-3">
-                    <button
-                        onClick={() => setShowInsufficientModal(false)}
-                        className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                        Dismiss
-                    </button>
-                    <button
-                        onClick={() => {
-                            // Optional: navigate to a page with tips or QR code
-                            setShowInsufficientModal(false);
-                        }}
-                        className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors"
-                    >
-                        Learn how to get more responses
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-)}
+
         </DepartmentHeadLayout>
     );
 }

@@ -10,7 +10,10 @@ use App\Models\SurveyResponse;
 use App\Models\SurveyQuestion;
 use App\Models\TransactionLog;
 
-use App\Models\Service; // if needed
+use App\Models\Service;
+use App\Models\Department;
+
+
 
 class AnalyticsController extends Controller
 {
@@ -20,74 +23,97 @@ class AnalyticsController extends Controller
     /**
  * Display CC and SQD analytics.
  */
-public function index(Request $request)
-{
-    // Check if user is department head
-    if (!$request->user() || !$request->user()->isDepartmentHead()) {
-        abort(403, 'Unauthorized access. Department head privileges required.');
+ public function index(Request $request)
+    {
+        if (!$request->user() || !$request->user()->isDepartmentHead()) {
+            abort(403, 'Unauthorized access. Department head privileges required.');
+        }
+
+        $filters = $request->only([
+            'age_group', 'client_type', 'sex', 'region', 'service_availed', 'date_from', 'date_to',
+        ]);
+
+        $data = $this->getAnalyticsForDepartment($request->user()->department_id, $filters);
+
+        return Inertia::render('DepartmentHead/Analytics', $data);
     }
 
-    // Get filter parameters
-    $filters = $request->only([
-        'age_group',
-        'client_type',
-        'sex',
-        'region',
-        'service_availed',
-        'date_from',
-        'date_to',
-    ]);
 
-    // Base query - ONLY respondents who completed at least one survey question
-    $query = Respondent::completedSurvey();
-    $query = $this->scopeByDepartment($query, $request->user());
+     public function show(Request $request, Department $department)
+    {
+        if (!$request->user()->is_hr_department) {
+            abort(403, 'Unauthorized.');
+        }
 
-    // Apply filters
-    $this->applyFilters($query, $filters);
+        $filters = $request->only([
+            'age_group', 'client_type', 'sex', 'region', 'service_availed', 'date_from', 'date_to',
+        ]);
 
-    // Get filtered respondent IDs
-    $respondentIds = $query->pluck('id');
+        $data = $this->getAnalyticsForDepartment($department->id, $filters);
 
-    // Get all CC questions with their possible answers
-    $ccAnalytics = $this->getCCAnalytics($respondentIds);
+        return Inertia::render('DepartmentHead/Analytics', array_merge($data, [
+            'viewingDepartment' => $department,
+        ]));
+    }
 
-    // Get all SQD questions with their possible answers
-    $sqdAnalytics = $this->getSQDAnalytics($respondentIds);
 
-    // Get total respondents count - ONLY those who answered surveys
-    $totalRespondents = $respondentIds->count();
 
-    // Calculate overall satisfaction average
-    $overallSatisfaction = $this->calculateOverallSatisfaction($sqdAnalytics);
+ private function getAnalyticsForDepartment($departmentId, $filters)
+    {
+        // Base query: completed surveys from the given department
+        $query = Respondent::completedSurvey()
+            ->whereHas('service', fn($q) => $q->where('department_id', $departmentId));
 
-    $overallSQDSummary = $this->calculateOverallSQDSummary($sqdAnalytics, $respondentIds);
+        // Apply filters
+        $this->applyFilters($query, $filters);
 
-    // Get unique values for filter dropdowns
-    $filterOptions = [
-        'client_types' => ['citizen', 'business', 'government'],
-        'sexes' => ['male', 'female', 'prefer_not_to_say'],
-        'regions' => Respondent::completedSurvey()->distinct()->pluck('region_of_residence')->sort()->values(),
-        'age_groups' => [
-            ['value' => '18_below', 'label' => '18 and below'],
-            ['value' => '19_25', 'label' => '19-25 years'],
-            ['value' => '26_35', 'label' => '26-35 years'],
-            ['value' => '36_45', 'label' => '36-45 years'],
-            ['value' => '46_60', 'label' => '46-60 years'],
-            ['value' => '61_above', 'label' => '61+ years'],
-        ],
-        'serviceOptions' => Respondent::completedSurvey()->distinct()->pluck('service_availed')->sort()->values(),
-    ];
+        // Get filtered respondent IDs
+        $respondentIds = $query->pluck('id');
 
-    return Inertia::render('DepartmentHead/Analytics', [
-        'ccAnalytics' => $ccAnalytics,
-        'sqdAnalytics' => $sqdAnalytics,
-        'overallSQDSummary' => $overallSQDSummary,
-        'filterOptions' => $filterOptions,
-        'filters' => $filters,
-        'totalRespondents' => $totalRespondents,
-        'overallSatisfaction' => $overallSatisfaction,
-    ]);
-}
+        // Compute analytics
+        $ccAnalytics = $this->getCCAnalytics($respondentIds);
+        $sqdAnalytics = $this->getSQDAnalytics($respondentIds);
+        $totalRespondents = $respondentIds->count();
+        $overallSatisfaction = $this->calculateOverallSatisfaction($sqdAnalytics);
+        $overallSQDSummary = $this->calculateOverallSQDSummary($sqdAnalytics, $respondentIds);
+
+        // Filter options (scoped to department for regions and services)
+        $filterOptions = [
+            'client_types' => ['citizen', 'business', 'government'],
+            'sexes' => ['male', 'female', 'prefer_not_to_say'],
+            'regions' => Respondent::completedSurvey()
+                ->whereHas('service', fn($q) => $q->where('department_id', $departmentId))
+                ->distinct()
+                ->pluck('region_of_residence')
+                ->sort()
+                ->values(),
+            'age_groups' => [
+                ['value' => '18_below', 'label' => '18 and below'],
+                ['value' => '19_25', 'label' => '19-25 years'],
+                ['value' => '26_35', 'label' => '26-35 years'],
+                ['value' => '36_45', 'label' => '36-45 years'],
+                ['value' => '46_60', 'label' => '46-60 years'],
+                ['value' => '61_above', 'label' => '61+ years'],
+            ],
+            'serviceOptions' => Respondent::completedSurvey()
+                ->whereHas('service', fn($q) => $q->where('department_id', $departmentId))
+                ->distinct()
+                ->pluck('service_availed')
+                ->sort()
+                ->values(),
+        ];
+
+        return [
+            'ccAnalytics' => $ccAnalytics,
+            'sqdAnalytics' => $sqdAnalytics,
+            'overallSQDSummary' => $overallSQDSummary,
+            'filterOptions' => $filterOptions,
+            'filters' => $filters,
+            'totalRespondents' => $totalRespondents,
+            'overallSatisfaction' => $overallSatisfaction,
+        ];
+    }
+
 
 /**
  * Apply filters to query - extracted as separate method for reusability
@@ -573,6 +599,9 @@ private function scopeByDepartment($query, $user)
         $q->where('department_id', $user->department_id);
     });
 }
+
+
+
 
 
 
