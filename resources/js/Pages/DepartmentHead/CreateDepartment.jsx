@@ -141,7 +141,7 @@ export default function CreateDepartment() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Description <span className="text-gray-400">(optional)</span>
+                                        Descriptions <span className="text-gray-400">(optional)</span>
                                     </label>
                                     <textarea
                                         value={data.department_description}
