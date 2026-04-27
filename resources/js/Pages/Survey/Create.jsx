@@ -126,21 +126,22 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
     ];
 
     // Response Options for SQD questions
-    const responseOptions = isBisaya ? [
-        { value: 'Dili gyud Kaayo Mouyon', label: 'Dili gyud Kaayo Mouyon', short: 'DKM' },
-        { value: 'Dili Mouyon', label: 'Dili Mouyon', short: 'DM' },
-        { value: 'Wala Mouyon o Dili Mouyon', label: 'Wala Mouyon o Dili Mouyon', short: 'WM/DM' },
-        { value: 'Mouyon', label: 'Mouyon', short: 'M' },
-        { value: 'Mouyon gyud Kaayo', label: 'Mouyon gyud Kaayo', short: 'MK' },
-        { value: 'N/A (Dili Aplikable)', label: 'N/A (Dili Aplikable)', short: 'N/A' }
-    ] : [
-        { value: 'Strongly Disagree', label: 'Strongly Disagree', short: 'SD' },
-        { value: 'Disagree', label: 'Disagree', short: 'D' },
-        { value: 'Neither Agree Nor Disagree', label: 'Neither Agree Nor Disagree', short: 'N' },
-        { value: 'Agree', label: 'Agree', short: 'A' },
-        { value: 'Strongly Agree', label: 'Strongly Agree', short: 'SA' },
-        { value: 'N/A (Not Applicable)', label: 'N/A (Not Applicable)', short: 'N/A' }
-    ];
+   const responseOptions = isBisaya ? [
+  { value: 'Dili gyud Kaayo Mouyon', label: 'Dili gyud Kaayo Mouyon', emoji: '😡' },
+  { value: 'Dili Mouyon', label: 'Dili Mouyon', emoji: '😞' },
+  { value: 'Wala Mouyon o Dili Mouyon', label: 'Wala Mouyon o Dili Mouyon', emoji: '😐' },
+  { value: 'Mouyon', label: 'Mouyon', emoji: '🙂' },
+  { value: 'Mouyon gyud Kaayo', label: 'Mouyon gyud Kaayo', emoji: '😀' },
+  { value: 'N/A (Dili Aplikable)', label: 'N/A (Dili Aplikable)', emoji: '⊘' }
+] : [
+  { value: 'Strongly Disagree', label: 'Strongly Disagree', emoji: '😡' },
+  { value: 'Disagree', label: 'Disagree', emoji: '😞' },
+  { value: 'Neither Agree Nor Disagree', label: 'Neither Agree Nor Disagree', emoji: '😐' },
+  { value: 'Agree', label: 'Agree', emoji: '🙂' },
+  { value: 'Strongly Agree', label: 'Strongly Agree', emoji: '😀' },
+  { value: 'N/A (Not Applicable)', label: 'N/A (Not Applicable)', emoji: '⊘' }
+];
+
 
     // Bisaya Translations
     const translations = {
@@ -587,40 +588,60 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
                                     </div>
                                 </div>
                                 {/* Rating Legend */}
-                                <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-red-200 p-2 sm:p-3 mb-4 rounded-t-xl shadow-md">
-                                    <div className="flex flex-wrap gap-1 sm:gap-3 justify-center text-xs sm:text-sm">
-                                        {responseOptions.map(opt => (
-                                            <div key={opt.value} className="flex items-center space-x-1 bg-red-50 px-2 sm:px-3 py-1 rounded-full">
-                                                <span className="font-bold text-red-700 text-xs sm:text-sm">{opt.short}</span>
-                                                <span className="text-gray-700 hidden sm:inline">=</span>
-                                                <span className="text-gray-600 hidden sm:inline text-xs">{opt.label}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+<div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-red-200 p-2 sm:p-3 mb-4 rounded-t-xl shadow-md">
+  <div className="flex flex-wrap gap-2 sm:gap-3 justify-center text-xs sm:text-sm">
+    {responseOptions.map(opt => (
+      <div key={opt.value} className="flex items-center space-x-1 bg-red-50 px-2 sm:px-3 py-1 rounded-full">
+        <span className="text-lg">{opt.emoji}</span>
+        <span className="text-gray-700 text-xs sm:text-sm">{opt.label}</span>
+      </div>
+    ))}
+  </div>
+</div>
                                 {/* SQD Cards */}
-                                <div className="space-y-4">
-                                    {secondSetQuestions.map((question, index) => {
-                                        const safeId = question.custom_id?.trim() || `sqd-${index}`;
-                                        const questionText = isBisaya ? sqdBisayaTexts[question.custom_id] || question.question_text : question.question_text;
-                                        return (
-                                            <div key={safeId} className="bg-white border border-red-200 rounded-xl p-4 shadow-sm">
-                                                <div className="flex items-start mb-3">
-                                                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-600 font-bold text-xs mr-2 flex-shrink-0">{safeId}</span>
-                                                    <h4 className="text-sm font-medium text-gray-800">{questionText}</h4>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    {responseOptions.map((option) => (
-                                                        <label key={`${safeId}-${option.value}`} className="flex items-center p-2 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-red-50 transition-colors">
-                                                            <input type="radio" name={`question_${safeId}`} value={option.value} checked={data.responses[question.custom_id] === option.value} onChange={() => handleResponseChange(question.custom_id, option.value)} className="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500 mr-3" />
-                                                            <span className="text-sm text-gray-700">{option.label}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                               <div className="space-y-4">
+  {secondSetQuestions.map((question, index) => {
+    const safeId = question.custom_id?.trim() || `sqd-${index}`;
+    const questionText = isBisaya ? sqdBisayaTexts[question.custom_id] || question.question_text : question.question_text;
+    const currentValue = data.responses[question.custom_id];
+
+    return (
+      <div key={safeId} className="bg-white border border-red-200 rounded-xl p-4 shadow-sm">
+        <div className="flex items-start mb-3">
+          <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-600 font-bold text-xs mr-2 flex-shrink-0">{safeId}</span>
+          <h4 className="text-sm font-medium text-gray-800">{questionText}</h4>
+        </div>
+
+        {/* Responsive emoji button row: scroll horizontally on mobile, wrap on larger screens */}
+        <div className="relative">
+          {/* Gradient shadows to hint scrolling (optional) */}
+          <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white to-transparent pointer-events-none z-10 sm:hidden"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white to-transparent pointer-events-none z-10 sm:hidden"></div>
+
+          <div className="overflow-x-auto pb-2 -mx-1 px-1 sm:overflow-visible">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+  {responseOptions.map((option) => (
+    <button
+      key={option.value}
+      type="button"
+      onClick={() => handleResponseChange(question.custom_id, option.value)}
+      className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 ${
+        currentValue === option.value
+          ? 'bg-red-600 text-white ring-2 ring-red-600 ring-offset-2'
+          : 'bg-gray-100 hover:bg-red-100 text-gray-700'
+      }`}
+    >
+      <span className="text-4xl leading-none">{option.emoji}</span>
+  <span className="text-xs">{option.label}</span>
+    </button>
+  ))}
+</div>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
                             </div>
 
                             {/* Optional Suggestions and Email Card (unchanged) */}
