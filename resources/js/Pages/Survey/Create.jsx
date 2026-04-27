@@ -127,14 +127,14 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
 
     // Response Options for SQD questions
    const responseOptions = isBisaya ? [
-  { value: 'Dili gyud Kaayo Mouyon', label: 'Dili gyud Kaayo Mouyon', emoji: '😡' },
+  { value: 'Dili gyud Kaayo Mouyon', label: 'Dili gyud Kaayo Mouyon', emoji: '😦' },
   { value: 'Dili Mouyon', label: 'Dili Mouyon', emoji: '😞' },
   { value: 'Wala Mouyon o Dili Mouyon', label: 'Wala Mouyon o Dili Mouyon', emoji: '😐' },
   { value: 'Mouyon', label: 'Mouyon', emoji: '🙂' },
   { value: 'Mouyon gyud Kaayo', label: 'Mouyon gyud Kaayo', emoji: '😀' },
   { value: 'N/A (Dili Aplikable)', label: 'N/A (Dili Aplikable)', emoji: '⊘' }
 ] : [
-  { value: 'Strongly Disagree', label: 'Strongly Disagree', emoji: '😡' },
+  { value: 'Strongly Disagree', label: 'Strongly Disagree', emoji: '😦' },
   { value: 'Disagree', label: 'Disagree', emoji: '😞' },
   { value: 'Neither Agree Nor Disagree', label: 'Neither Agree Nor Disagree', emoji: '😐' },
   { value: 'Agree', label: 'Agree', emoji: '🙂' },
@@ -168,14 +168,15 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
         'date_of_birth': 'Petsa sa Pagkatawo *',
         'age_calculated': 'Kalkulado nga edad',
         'years_old': 'ka tuig',
-        'civil_status': 'Kahimtang sa Sibil *',
-        'select_civil_status': 'Pagpili og kahimtang',
-        'single': 'Ulitawo / Dalaga',
+        'civil_status': 'Kahimtang Sibil *',
+        'select_civil_status': 'Pagpili sa kahimtang sibil',
+        'single': 'Walay Minyo',
         'married': 'Minyo',
-        'divorced': 'Ngalan / Diborsiyado',
-        'widowed': 'Biyuda / Biyudo',
-        'region_of_residence': 'Rehiyon sa Panimalay *',
-        'service_availed': 'Serbisyo nga Giavil *',
+        'divorced': 'Diborsiyado',
+        'widowed': 'Balo / Biyudo',
+
+        'region_of_residence': 'Rehiyon sa Panimuyo *',
+        'service_availed': 'Serbisyo nga Gikuha *',
 
         // Citizen's Charter Questions
         'cc1_title': 'CC1. Asa sa mosunod ang pinakahustong naghulagway sa imong kahibalo bahin sa CC?',
@@ -212,9 +213,9 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
         'no': 'Dili',
         'male': 'Lalaki',
         'female': 'Babaye',
-        'prefer_not_to_say': 'Mas gusto nga dili moingon',
-        'citizen': 'Sitilyano',
-        'business': 'Negosyo',
+        'prefer_not_to_say': 'Nagpili nga dili mosulti',
+        'citizen': 'Lumolupyo',
+        'business': 'Negosyante',
         'government': 'Gobyerno'
     };
 
@@ -303,6 +304,7 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
         SQD6: "SQD6. Gibati nako nga patas ang opisina sa tanan, o 'walay palakasan'.",
         SQD7: "SQD7. Maayo og pagtratar ang mga staff, ug ako gihatagan og oportunidad sa pagkompleto sa akong transaksyon.",
         SQD8: "SQD8. Nakuha nako ang akong gikinahanglan gikan sa opisina sa gobyerno.",
+        SQD9: "SQD9. Ang opisina nakakompleto sa akong transaksyon sulod sa oras nga gitakda sa Citizen’s Charter.",
     };
 
     const t = isBisaya ? translations : english;
@@ -514,67 +516,95 @@ export default function SurveyCreate({ firstSetQuestions, secondSetQuestions, se
                                 </div>
                             </div>
 
-                            {/* Citizen's Charter Card (unchanged) */}
-                            <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-red-100">
-                                {/* ... keep the same CC content as in original ... */}
-                                <div className="flex items-center mb-6">
-                                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-4">
-                                        <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h2 className="text-xl font-bold text-gray-900">{t.cc_awareness}</h2>
-                                        <p className="text-sm text-gray-600 mt-1">{t.cc_description}</p>
-                                    </div>
-                                </div>
+                           {/* Citizen's Charter Card - Fully Responsive */}
+<div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8 border border-red-100">
+  <div className="flex items-start sm:items-center mb-6">
+    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0">
+      <svg className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    </div>
+    <div>
+      <h2 className="text-lg sm:text-xl font-bold text-gray-900">{t.cc_awareness}</h2>
+      <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">{t.cc_description}</p>
+    </div>
+  </div>
 
-                                {/* CC1, CC2, CC3 – same as original */}
-                                <div className="mb-8 bg-blue-50 rounded-xl p-6 border border-blue-100">
-                                    <h3 className="text-lg font-semibold text-blue-900 mb-4">{t.cc1_title}</h3>
-                                    <div className="space-y-3">
-                                        {[1,2,3,4].map((value) => (
-                                            <label key={value} className="flex items-center p-4 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-all duration-200 hover:shadow-md">
-                                                <input type="radio" name="cc1" value={value.toString()} checked={data.responses['CC1'] === value.toString()} onChange={() => handleResponseChange('CC1', value.toString())} className="h-5 w-5 text-blue-600 border-blue-300 focus:ring-blue-500 transition-colors" />
-                                                <span className="ml-3 text-gray-700">
-                                                    {t[`cc1_option${value}`]}
-                                                    {value === 4 && <span className="text-gray-500 italic ml-2 text-sm">{t.cc1_note}</span>}
-                                                </span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
+  {/* CC1 */}
+  <div className="mb-6 sm:mb-8 bg-blue-50 rounded-xl p-4 sm:p-6 border border-blue-100">
+    <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-3 sm:mb-4">{t.cc1_title}</h3>
+    <div className="space-y-2 sm:space-y-3">
+      {[1,2,3,4].map((value) => (
+        <label key={value} className="flex items-start p-3 sm:p-4 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-all duration-200 hover:shadow-md">
+          <input
+            type="radio"
+            name="cc1"
+            value={value.toString()}
+            checked={data.responses['CC1'] === value.toString()}
+            onChange={() => handleResponseChange('CC1', value.toString())}
+            className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 border-blue-300 focus:ring-blue-500 mt-0.5 flex-shrink-0"
+          />
+          <span className="ml-2 sm:ml-3 text-xs sm:text-sm text-gray-700">
+            {t[`cc1_option${value}`]}
+            {value === 4 && <span className="text-gray-500 italic ml-1 sm:ml-2 text-[11px] sm:text-sm">{t.cc1_note}</span>}
+          </span>
+        </label>
+      ))}
+    </div>
+  </div>
 
-                                <div className={`mb-8 bg-blue-50 rounded-xl p-6 border border-blue-100 ${data.responses['CC1'] === '4' ? 'opacity-75' : ''}`}>
-                                    <h3 className="text-lg font-semibold text-blue-900 mb-4">{t.cc2_title}</h3>
-                                    <div className="space-y-3">
-                                        {[1,2,3,4,5].map((value) => (
-                                            <label key={value} className={`flex items-center p-4 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-all duration-200 hover:shadow-md ${data.responses['CC1'] === '4' ? 'cursor-not-allowed opacity-50' : ''}`}>
-                                                <input type="radio" name="cc2" value={value.toString()} checked={data.responses['CC2'] === value.toString()} onChange={() => handleResponseChange('CC2', value.toString())} disabled={data.responses['CC1'] === '4'} className="h-5 w-5 text-blue-600 border-blue-300 focus:ring-blue-500 disabled:opacity-50 transition-colors" />
-                                                <span className={`ml-3 ${data.responses['CC1'] === '4' ? 'text-gray-400' : 'text-gray-700'}`}>{t[`cc2_option${value}`]}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                    {data.responses['CC1'] === '4' && (
-                                        <p className="mt-4 text-sm text-blue-600 italic bg-white/50 p-3 rounded-lg">
-                                            <svg className="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            {isBisaya ? 'Gisal-ot og "N/A" tungod kay imong gipili ang option 4 sa CC1.' : 'Automatically set to "N/A" because you selected option 4 in CC1.'}
-                                        </p>
-                                    )}
-                                </div>
+  {/* CC2 */}
+  <div className={`mb-6 sm:mb-8 bg-blue-50 rounded-xl p-4 sm:p-6 border border-blue-100 ${data.responses['CC1'] === '4' ? 'opacity-75' : ''}`}>
+    <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-3 sm:mb-4">{t.cc2_title}</h3>
+    <div className="space-y-2 sm:space-y-3">
+      {[1,2,3,4,5].map((value) => (
+        <label key={value} className={`flex items-start p-3 sm:p-4 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-all duration-200 hover:shadow-md ${data.responses['CC1'] === '4' ? 'cursor-not-allowed opacity-50' : ''}`}>
+          <input
+            type="radio"
+            name="cc2"
+            value={value.toString()}
+            checked={data.responses['CC2'] === value.toString()}
+            onChange={() => handleResponseChange('CC2', value.toString())}
+            disabled={data.responses['CC1'] === '4'}
+            className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 border-blue-300 focus:ring-blue-500 disabled:opacity-50 mt-0.5 flex-shrink-0"
+          />
+          <span className={`ml-2 sm:ml-3 text-xs sm:text-sm ${data.responses['CC1'] === '4' ? 'text-gray-400' : 'text-gray-700'}`}>
+            {t[`cc2_option${value}`]}
+          </span>
+        </label>
+      ))}
+    </div>
+    {data.responses['CC1'] === '4' && (
+      <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-blue-600 italic bg-white/50 p-2 sm:p-3 rounded-lg">
+        <svg className="inline-block w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        {isBisaya ? 'Gisal-ot og "N/A" tungod kay imong gipili ang option 4 sa CC1.' : 'Automatically set to "N/A" because you selected option 4 in CC1.'}
+      </p>
+    )}
+  </div>
 
-                                <div className={`bg-blue-50 rounded-xl p-6 border border-blue-100 ${data.responses['CC1'] === '4' ? 'opacity-75' : ''}`}>
-                                    <h3 className="text-lg font-semibold text-blue-900 mb-4">{t.cc3_title}</h3>
-                                    <div className="space-y-3">
-                                        {[1,2,3,4].map((value) => (
-                                            <label key={value} className={`flex items-center p-4 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-all duration-200 hover:shadow-md ${data.responses['CC1'] === '4' ? 'cursor-not-allowed opacity-50' : ''}`}>
-                                                <input type="radio" name="cc3" value={value.toString()} checked={data.responses['CC3'] === value.toString()} onChange={() => handleResponseChange('CC3', value.toString())} disabled={data.responses['CC1'] === '4'} className="h-5 w-5 text-blue-600 border-blue-300 focus:ring-blue-500 disabled:opacity-50 transition-colors" />
-                                                <span className={`ml-3 ${data.responses['CC1'] === '4' ? 'text-gray-400' : 'text-gray-700'}`}>{t[`cc3_option${value}`]}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+  {/* CC3 */}
+  <div className={`bg-blue-50 rounded-xl p-4 sm:p-6 border border-blue-100 ${data.responses['CC1'] === '4' ? 'opacity-75' : ''}`}>
+    <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-3 sm:mb-4">{t.cc3_title}</h3>
+    <div className="space-y-2 sm:space-y-3">
+      {[1,2,3,4].map((value) => (
+        <label key={value} className={`flex items-start p-3 sm:p-4 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-all duration-200 hover:shadow-md ${data.responses['CC1'] === '4' ? 'cursor-not-allowed opacity-50' : ''}`}>
+          <input
+            type="radio"
+            name="cc3"
+            value={value.toString()}
+            checked={data.responses['CC3'] === value.toString()}
+            onChange={() => handleResponseChange('CC3', value.toString())}
+            disabled={data.responses['CC1'] === '4'}
+            className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 border-blue-300 focus:ring-blue-500 disabled:opacity-50 mt-0.5 flex-shrink-0"
+          />
+          <span className={`ml-2 sm:ml-3 text-xs sm:text-sm ${data.responses['CC1'] === '4' ? 'text-gray-400' : 'text-gray-700'}`}>
+            {t[`cc3_option${value}`]}
+          </span>
+        </label>
+      ))}
+    </div>
+  </div>
+</div>
 
                             {/* Service Assessment Card (unchanged) */}
                             <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-red-100">
