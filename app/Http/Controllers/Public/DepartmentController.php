@@ -43,6 +43,7 @@ class DepartmentController extends Controller
                     'id' => $service->id,
                     'name' => $service->name,
                     'description' => $service->description,
+                    'category' => $service->category, // ← add this line
                 ]),
             ],
         ]);

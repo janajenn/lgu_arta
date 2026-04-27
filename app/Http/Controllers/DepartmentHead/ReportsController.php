@@ -972,4 +972,424 @@ public function serviceRatings(Request $request)
 }
 
 
+
+
+
+/**
+ * Preview all reports combined.
+ */
+public function preview(Request $request)
+{
+    if (!$request->user() || !$request->user()->is_hr_department) {
+        abort(403, 'Unauthorized. Only HR can view reports.');
+    }
+
+    $data = $this->getAllReportData($request);
+
+    return Inertia::render('DepartmentHead/Reports/Preview', $data);
+}
+
+/**
+ * Collect all report data into one array.
+ */
+private function getAllReportData(Request $request)
+{
+    // Reuse existing logic but return data arrays instead of Inertia responses
+    $startDate = $request->get('start_date');
+    $endDate = $request->get('end_date');
+
+    // 1. Service Summary
+    $services = Service::all();
+    $servicesByCategory = ['internal' => [], 'external' => []];
+    $totalResponses = 0;
+    $totalTransactions = 0;
+    foreach ($services as $service) {
+        $respondentQuery = Respondent::where('service_availed', $service->name);
+        if ($startDate && $endDate) {
+            $respondentQuery->whereBetween('date_of_transaction', [$startDate, $endDate]);
+        }
+        $responsesCount = (clone $respondentQuery)->where('completed_survey', true)->count();
+        $totalTransactionsCount = (clone $respondentQuery)->count();
+        $responseRate = $totalTransactionsCount > 0 ? round(($responsesCount / $totalTransactionsCount) * 100, 1) : 0;
+        $servicesByCategory[$service->category][] = [
+            'name' => $service->name,
+            'responses' => $responsesCount,
+            'total_transactions' => $totalTransactionsCount,
+            'response_rate' => $responseRate,
+        ];
+        $totalResponses += $responsesCount;
+        $totalTransactions += $totalTransactionsCount;
+    }
+    $serviceSummaryData = [
+        'servicesByCategory' => $servicesByCategory,
+        'insights' => $this->getServiceSummaryInsights($servicesByCategory, $totalResponses, $totalTransactions),
+    ];
+
+    // 2. Age Distribution
+    $ageQuery = Respondent::where('completed_survey', true);
+    if ($startDate && $endDate) {
+        $ageQuery->whereBetween('date_of_transaction', [$startDate, $endDate]);
+    }
+    $total = $ageQuery->count();
+    $ageGroups = ['18 and below' => [0,18], '19-25'=>[19,25], '26-35'=>[26,35], '36-45'=>[36,45], '46-60'=>[46,60], '61+'=>[61,120]];
+    $distribution = [];
+    $sumAge = 0; $ageCount = 0;
+    foreach ($ageGroups as $label => $range) {
+        $groupQuery = clone $ageQuery;
+        if ($label === '61+') {
+            $groupQuery->where('age', '>=', $range[0]);
+        } else {
+            $groupQuery->whereBetween('age', [$range[0], $range[1]]);
+        }
+        $count = $groupQuery->count();
+        if ($label !== '61+') {
+            $sumAge += $groupQuery->sum('age');
+            $ageCount += $count;
+        }
+        $distribution[$label] = ['count' => $count, 'percentage' => $total ? round(($count/$total)*100,1) : 0];
+    }
+    $averageAge = $ageCount ? round($sumAge / $ageCount, 1) : null;
+    $ageDistributionData = [
+        'ageDistribution' => $distribution,
+        'total' => $total,
+        'averageAge' => $averageAge,
+        'insights' => $this->getAgeInsights($distribution, $total, $averageAge),
+    ];
+
+    // 3. Client Type Distribution
+    $clientQuery = Respondent::where('completed_survey', true);
+    if ($startDate && $endDate) $clientQuery->whereBetween('date_of_transaction', [$startDate, $endDate]);
+    $clientTypes = $clientQuery->selectRaw('client_type, COUNT(*) as count')->groupBy('client_type')->pluck('count', 'client_type')->toArray();
+    $clientTypeData = [
+        'clientTypes' => $clientTypes,
+        'insights' => $this->getClientTypeInsights($clientTypes),
+    ];
+
+    // 4. Gender Distribution
+    $genderQuery = Respondent::where('completed_survey', true);
+    if ($startDate && $endDate) $genderQuery->whereBetween('date_of_transaction', [$startDate, $endDate]);
+    $genders = $genderQuery->selectRaw('sex, COUNT(*) as count')->groupBy('sex')->pluck('count', 'sex')->toArray();
+    $genderTotal = array_sum($genders);
+    $genderData = [
+        'genders' => $genders,
+        'total' => $genderTotal,
+        'insights' => $this->getGenderInsights($genders, $genderTotal),
+    ];
+
+    // 5. Region Distribution
+    $regionQuery = Respondent::where('completed_survey', true);
+    if ($startDate && $endDate) $regionQuery->whereBetween('date_of_transaction', [$startDate, $endDate]);
+    $regions = $regionQuery->selectRaw('region_of_residence, COUNT(*) as count')->groupBy('region_of_residence')->orderBy('count', 'desc')->pluck('count', 'region_of_residence')->toArray();
+    $regionTotal = array_sum($regions);
+    $regionData = [
+        'regions' => $regions,
+        'total' => $regionTotal,
+        'insights' => $this->getRegionInsights($regions, $regionTotal),
+    ];
+
+    // 6. CC & SQD Summary
+    $respondentIds = Respondent::where('completed_survey', true)
+        ->when($startDate && $endDate, fn($q) => $q->whereBetween('date_of_transaction', [$startDate, $endDate]))
+        ->pluck('id');
+    // CC Data (same as in ccSqdSummary method)
+    $ccQuestionStructures = [
+        'CC1' => ['question' => 'CC1. Which of the following best describes your awareness of a CC?', 'choices' => ['1' => 'I know what a CC is and I saw this office\'s CC.', '2' => 'I know what a CC is but I did NOT see this office\'s CC.', '3' => 'I learned of the CC only when I saw this office\'s CC.', '4' => 'I do not know what a CC is and I did not see one in this office.']],
+        'CC2' => ['question' => 'CC2. If aware of CC (answered 1–3 in CC1), would you say that the CC of this office was ...?', 'choices' => ['1' => 'Easy to see', '2' => 'Somewhat easy to see', '3' => 'Difficult to see', '4' => 'Not visible at all', '5' => 'N/A']],
+        'CC3' => ['question' => 'CC3. If aware of CC (answered codes 1–3 in CC1), how much did the CC help you in your transaction?', 'choices' => ['1' => 'Helped very much', '2' => 'Somewhat helped', '3' => 'Did not help', '4' => 'N/A']],
+    ];
+    $ccData = [];
+    foreach ($ccQuestionStructures as $qId => $qData) {
+        $question = SurveyQuestion::where('custom_id', $qId)->first();
+        if (!$question) continue;
+        $responses = SurveyResponse::where('question_id', $question->id)->whereIn('respondent_id', $respondentIds)->get();
+        $totalRes = $responses->count();
+        $answerStats = [];
+        foreach ($qData['choices'] as $code => $text) {
+            $count = $responses->where('answer_value', $code)->count();
+            $percentage = $totalRes > 0 ? round(($count / $totalRes) * 100, 1) : 0;
+            $answerStats[] = ['code' => $code, 'text' => $text, 'count' => $count, 'percentage' => $percentage];
+        }
+        $ccData[$qId] = ['question' => $qData['question'], 'total_responses' => $totalRes, 'answer_stats' => $answerStats];
+    }
+    // SQD Data
+    $sqdQuestions = SurveyQuestion::where('custom_id', 'like', 'SQD%')->orderBy('custom_id')->get();
+    $sqdPerQuestion = [];
+    $overallCounts = ['Strongly Agree'=>0, 'Agree'=>0, 'Neither Agree Nor Disagree'=>0, 'Disagree'=>0, 'Strongly Disagree'=>0, 'N/A (Not Applicable)'=>0];
+    $overallTotal = 0;
+    foreach ($sqdQuestions as $question) {
+        $responses = SurveyResponse::where('question_id', $question->id)->whereIn('respondent_id', $respondentIds)->get();
+        $qt = $responses->count();
+        $overallTotal += $qt;
+        $counts = ['Strongly Agree'=>0, 'Agree'=>0, 'Neither Agree Nor Disagree'=>0, 'Disagree'=>0, 'Strongly Disagree'=>0, 'N/A (Not Applicable)'=>0];
+        foreach ($responses as $r) {
+            $ans = $r->answer_value;
+            if (str_contains($ans, 'Strongly Agree')) { $counts['Strongly Agree']++; $overallCounts['Strongly Agree']++; }
+            elseif (str_contains($ans, 'Agree') && !str_contains($ans, 'Strongly')) { $counts['Agree']++; $overallCounts['Agree']++; }
+            elseif (str_contains($ans, 'Neither') || str_contains($ans, 'Wala Mouyon o Dili Mouyon')) { $counts['Neither Agree Nor Disagree']++; $overallCounts['Neither Agree Nor Disagree']++; }
+            elseif (str_contains($ans, 'Disagree') && !str_contains($ans, 'Strongly')) { $counts['Disagree']++; $overallCounts['Disagree']++; }
+            elseif (str_contains($ans, 'Strongly Disagree')) { $counts['Strongly Disagree']++; $overallCounts['Strongly Disagree']++; }
+            elseif (str_contains($ans, 'N/A')) { $counts['N/A (Not Applicable)']++; $overallCounts['N/A (Not Applicable)']++; }
+        }
+        $valid = $qt - $counts['N/A (Not Applicable)'];
+        $satisfaction = $valid > 0 ? round((($counts['Strongly Agree'] + $counts['Agree']) / $valid) * 100, 1) : 0;
+        $sqdPerQuestion[] = ['id' => $question->custom_id, 'label' => $this->getSQDLabel($question->custom_id), 'total' => $qt, 'counts' => $counts, 'satisfaction_score' => $satisfaction];
+    }
+    $validTotal = $overallTotal - $overallCounts['N/A (Not Applicable)'];
+    $overallSatisfaction = $validTotal > 0 ? round((($overallCounts['Strongly Agree'] + $overallCounts['Agree']) / $validTotal) * 100, 1) : 0;
+    $sqdSummary = ['questions' => $sqdPerQuestion, 'overall_counts' => $overallCounts, 'overall_total' => $overallTotal, 'overall_satisfaction' => $overallSatisfaction];
+    $ccInsights = []; $sqdInsights = [];
+    if (isset($ccData['CC1'])) {
+        $cc1Stats = $ccData['CC1']['answer_stats'];
+        $unaware = collect($cc1Stats)->firstWhere('code', '4');
+        if ($unaware && $unaware['count'] > 0) $ccInsights[] = "CC Awareness: {$unaware['count']} respondents ({$unaware['percentage']}%) were unaware of the Citizen's Charter.";
+        $mostCommon = collect($cc1Stats)->sortByDesc('count')->first();
+        if ($mostCommon) $ccInsights[] = "Most Common CC1 Response: \"{$mostCommon['text']}\" chosen by {$mostCommon['count']} respondents ({$mostCommon['percentage']}%).";
+    }
+    if (isset($sqdSummary['overall_satisfaction'])) {
+        $sqdInsights[] = "Overall Satisfaction: {$sqdSummary['overall_satisfaction']}%.";
+        $dims = $sqdSummary['questions'];
+        if (!empty($dims)) {
+            $highest = collect($dims)->sortByDesc('satisfaction_score')->first();
+            $lowest = collect($dims)->sortBy('satisfaction_score')->first();
+            if ($highest) $sqdInsights[] = "Highest Dimension: {$highest['label']} ({$highest['satisfaction_score']}%).";
+            if ($lowest && $lowest['id'] !== $highest['id']) $sqdInsights[] = "Lowest Dimension: {$lowest['label']} ({$lowest['satisfaction_score']}%).";
+        }
+        $naPercent = $sqdSummary['overall_total'] > 0 ? round(($sqdSummary['overall_counts']['N/A (Not Applicable)'] / $sqdSummary['overall_total']) * 100, 1) : 0;
+        if ($naPercent > 20) $sqdInsights[] = "High N/A Rate: {$naPercent}% of responses were N/A – some questions may not apply.";
+    }
+    $ccSqdData = ['ccData' => $ccData, 'sqdSummary' => $sqdSummary, 'ccInsights' => $ccInsights, 'sqdInsights' => $sqdInsights];
+
+    // 7. Summary of Result (metrics)
+    $totalResp = $respondentIds->count();
+    $totalTrans = Respondent::when($startDate && $endDate, fn($q) => $q->whereBetween('date_of_transaction', [$startDate, $endDate]))->count();
+    $ccPercentages = [];
+    foreach (['CC1','CC2','CC3'] as $cId) {
+        $question = SurveyQuestion::where('custom_id', $cId)->first();
+        if (!$question) { $ccPercentages[$cId] = 0; continue; }
+        $count = SurveyResponse::where('question_id', $question->id)->whereIn('respondent_id', $respondentIds)->where('answer_value', '1')->count();
+        $ccPercentages[$cId] = $totalResp > 0 ? round(($count / $totalResp) * 100, 2) : 0;
+    }
+    $sqdQ = SurveyQuestion::where('custom_id', 'like', 'SQD%')->get();
+    $pos = 0; $val = 0;
+    foreach ($sqdQ as $q) {
+        $resp = SurveyResponse::where('question_id', $q->id)->whereIn('respondent_id', $respondentIds)->get();
+        foreach ($resp as $r) {
+            $ans = $r->answer_value;
+            if (str_contains($ans, 'Strongly Agree')) { $pos++; $val++; }
+            elseif (str_contains($ans, 'Agree') && !str_contains($ans, 'Strongly')) { $pos++; $val++; }
+            elseif (str_contains($ans, 'Neither') || str_contains($ans, 'Wala Mouyon o Dili Mouyon')) $val++;
+            elseif (str_contains($ans, 'Disagree') && !str_contains($ans, 'Strongly')) $val++;
+            elseif (str_contains($ans, 'Strongly Disagree')) $val++;
+        }
+    }
+    $overallScore = $val > 0 ? round(($pos / $val) * 100, 2) : 0;
+    $responseRate = $totalTrans > 0 ? round(($totalResp / $totalTrans) * 100, 2) : 0;
+    $metrics = ['cc_awareness' => $ccPercentages['CC1'], 'cc_visibility' => $ccPercentages['CC2'], 'cc_helpfulness' => $ccPercentages['CC3'], 'response_rate' => $responseRate, 'overall_score' => $overallScore];
+    $insightParagraph = $this->generateInsightParagraph($metrics, $totalResp, $totalTrans);
+    $summaryData = ['metrics' => $metrics, 'insightParagraph' => $insightParagraph, 'totalResponses' => $totalResp, 'totalTransactions' => $totalTrans];
+
+    // 8. Service Ratings
+    $servicesAll = Service::all();
+    $serviceRatings = [];
+    $overallPositive = 0; $overallValid = 0;
+    foreach ($servicesAll as $s) {
+        $respIds = Respondent::where('service_availed', $s->name)->where('completed_survey', true)
+            ->when($startDate && $endDate, fn($q) => $q->whereBetween('date_of_transaction', [$startDate, $endDate]))
+            ->pluck('id');
+        if ($respIds->isEmpty()) {
+            $serviceRatings[] = ['name' => $s->name, 'category' => $s->category, 'rating' => null, 'positive' => 0, 'valid' => 0];
+            continue;
+        }
+        $pos = 0; $val = 0;
+        foreach ($sqdQ as $q) {
+            $r = SurveyResponse::where('question_id', $q->id)->whereIn('respondent_id', $respIds)->get();
+            foreach ($r as $resp) {
+                $ans = $resp->answer_value;
+                if (str_contains($ans, 'Strongly Agree')) { $pos++; $val++; }
+                elseif (str_contains($ans, 'Agree') && !str_contains($ans, 'Strongly')) { $pos++; $val++; }
+                elseif (str_contains($ans, 'Neither') || str_contains($ans, 'Wala Mouyon o Dili Mouyon')) $val++;
+                elseif (str_contains($ans, 'Disagree') && !str_contains($ans, 'Strongly')) $val++;
+                elseif (str_contains($ans, 'Strongly Disagree')) $val++;
+            }
+        }
+        $rating = $val > 0 ? round(($pos / $val) * 100, 2) : null;
+        $serviceRatings[] = ['name' => $s->name, 'category' => $s->category, 'rating' => $rating, 'positive' => $pos, 'valid' => $val];
+        $overallPositive += $pos; $overallValid += $val;
+    }
+    $overallRating = $overallValid > 0 ? round(($overallPositive / $overallValid) * 100, 2) : null;
+    $serviceRatingsData = ['serviceRatings' => $serviceRatings, 'overallRating' => $overallRating, 'startDate' => $startDate, 'endDate' => $endDate];
+
+    return [
+        'serviceSummaryData' => $serviceSummaryData,
+        'ageDistributionData' => $ageDistributionData,
+        'clientTypeData' => $clientTypeData,
+        'genderData' => $genderData,
+        'regionData' => $regionData,
+        'ccSqdData' => $ccSqdData,
+        'summaryData' => $summaryData,
+        'serviceRatingsData' => $serviceRatingsData,
+    ];
+}
+
+// Helper methods (insights) – you already have them, but we need to expose them as private. Keep existing ones.
+
+
+/**
+ * Generate insights for service summary.
+ */
+private function getServiceSummaryInsights($servicesByCategory, $totalResponses, $totalTransactions)
+{
+    $insights = [];
+    $overallRate = $totalTransactions > 0 ? round(($totalResponses / $totalTransactions) * 100, 1) : 0;
+    $insights[] = "Overall response rate across all services is {$overallRate}% (based on {$totalTransactions} total transactions).";
+
+    $allServices = array_merge($servicesByCategory['internal'], $servicesByCategory['external']);
+    if (!empty($allServices)) {
+        $maxService = collect($allServices)->sortByDesc('responses')->first();
+        $insights[] = "The service with the most survey responses is {$maxService['name']} with {$maxService['responses']} responses (response rate: {$maxService['response_rate']}%).";
+    }
+
+    $withMinTransactions = array_filter($allServices, fn($s) => $s['total_transactions'] >= 10);
+    if (!empty($withMinTransactions)) {
+        $highestRate = collect($withMinTransactions)->sortByDesc('response_rate')->first();
+        $insights[] = "The service with the highest response rate is {$highestRate['name']} at {$highestRate['response_rate']}% (based on {$highestRate['total_transactions']} transactions).";
+    }
+
+    $internalResponses = collect($servicesByCategory['internal'])->sum('responses');
+    $externalResponses = collect($servicesByCategory['external'])->sum('responses');
+    $internalPercent = $totalResponses > 0 ? round(($internalResponses / $totalResponses) * 100, 1) : 0;
+    $externalPercent = $totalResponses > 0 ? round(($externalResponses / $totalResponses) * 100, 1) : 0;
+    $insights[] = "Internal services account for {$internalPercent}% of all responses, while external services account for {$externalPercent}%.";
+
+    return $insights;
+}
+
+/**
+ * Generate insights for age distribution.
+ */
+private function getAgeInsights($distribution, $total, $averageAge)
+{
+    $insights = [];
+    $maxGroup = null;
+    $maxCount = -1;
+    $minGroup = null;
+    $minCount = PHP_INT_MAX;
+    foreach ($distribution as $group => $data) {
+        if ($data['count'] > $maxCount) {
+            $maxCount = $data['count'];
+            $maxGroup = $group;
+        }
+        if ($data['count'] > 0 && $data['count'] < $minCount) {
+            $minCount = $data['count'];
+            $minGroup = $group;
+        }
+    }
+    if ($maxGroup) {
+        $insights[] = "The largest age group is {$maxGroup} with {$distribution[$maxGroup]['count']} respondents ({$distribution[$maxGroup]['percentage']}% of total).";
+    }
+    if ($minGroup && $minGroup !== $maxGroup) {
+        $insights[] = "The smallest age group is {$minGroup} with {$distribution[$minGroup]['count']} respondents ({$distribution[$minGroup]['percentage']}%).";
+    }
+    if ($averageAge) {
+        $insights[] = "The average age of respondents is {$averageAge} years.";
+    }
+
+    $under35 = 0;
+    $over35 = 0;
+    foreach ($distribution as $group => $data) {
+        if (in_array($group, ['18 and below', '19-25', '26-35'])) {
+            $under35 += $data['count'];
+        } else {
+            $over35 += $data['count'];
+        }
+    }
+    $under35Percent = $total ? round(($under35 / $total) * 100, 1) : 0;
+    $over35Percent = $total ? round(($over35 / $total) * 100, 1) : 0;
+    $insights[] = "Respondents under 35 make up {$under35Percent}% of the total, while those 35 and over make up {$over35Percent}%.";
+
+    return $insights;
+}
+
+/**
+ * Generate insights for client type distribution.
+ */
+private function getClientTypeInsights($clientTypes)
+{
+    $insights = [];
+    $total = array_sum($clientTypes);
+    if ($total > 0) {
+        $maxType = array_keys($clientTypes, max($clientTypes))[0];
+        $maxCount = $clientTypes[$maxType];
+        $maxPercent = round(($maxCount / $total) * 100, 1);
+        $insights[] = "The most frequent client type is {$maxType} with {$maxCount} respondents ({$maxPercent}% of total).";
+        foreach ($clientTypes as $type => $count) {
+            $percent = round(($count / $total) * 100, 1);
+            $insights[] = ucfirst($type) . " respondents: {$count} ({$percent}%).";
+        }
+        if ($maxType === 'citizen' && $maxPercent >= 50) {
+            $insights[] = "Citizens make up the majority of respondents, which is expected for a government service.";
+        }
+    } else {
+        $insights[] = "No data available for the selected period.";
+    }
+    return $insights;
+}
+
+/**
+ * Generate insights for gender distribution.
+ */
+private function getGenderInsights($genders, $total)
+{
+    $insights = [];
+    $labels = ['male' => 'Male', 'female' => 'Female', 'prefer_not_to_say' => 'Prefer not to say'];
+    if ($total > 0) {
+        $maxGenderKey = array_keys($genders, max($genders))[0];
+        $maxGenderLabel = $labels[$maxGenderKey] ?? $maxGenderKey;
+        $maxCount = $genders[$maxGenderKey];
+        $maxPercent = round(($maxCount / $total) * 100, 1);
+        $insights[] = "The most common gender is {$maxGenderLabel} with {$maxCount} respondents ({$maxPercent}% of total).";
+        foreach ($genders as $key => $count) {
+            $label = $labels[$key] ?? $key;
+            $percent = round(($count / $total) * 100, 1);
+            $insights[] = "{$label} represents {$percent}% of respondents ({$count} individuals).";
+        }
+        if (isset($genders['prefer_not_to_say']) && $genders['prefer_not_to_say'] / $total > 0.15) {
+            $insights[] = "A significant number of respondents ({$genders['prefer_not_to_say']}, " . round(($genders['prefer_not_to_say']/$total)*100,1) . "%) chose not to disclose their gender.";
+        }
+    } else {
+        $insights[] = "No gender data available.";
+    }
+    return $insights;
+}
+
+/**
+ * Generate insights for region distribution.
+ */
+private function getRegionInsights($regions, $total)
+{
+    $insights = [];
+    if (!empty($regions) && $total > 0) {
+        $topRegion = array_key_first($regions);
+        $topCount = $regions[$topRegion];
+        $topPercent = round(($topCount / $total) * 100, 1);
+        $insights[] = "The region with the most respondents is {$topRegion} with {$topCount} respondents ({$topPercent}% of total).";
+        $nonZero = array_filter($regions);
+        if (count($nonZero) > 1) {
+            $bottomRegion = array_key_last($nonZero);
+            $bottomCount = $nonZero[$bottomRegion];
+            $insights[] = "The region with the fewest respondents is {$bottomRegion} with only {$bottomCount} respondents.";
+        }
+        if (isset($regions['National Capital Region (NCR)'])) {
+            $ncrPercent = round(($regions['National Capital Region (NCR)'] / $total) * 100, 1);
+            $insights[] = "NCR accounts for {$ncrPercent}% of respondents.";
+        }
+        if ($topPercent > 50) {
+            $insights[] = "Respondents are heavily concentrated in {$topRegion}, which may indicate limited reach in other areas.";
+        }
+    } else {
+        $insights[] = "No region data available.";
+    }
+    return $insights;
+}
+
 }

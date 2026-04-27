@@ -8,18 +8,19 @@ class Respondent extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'client_type',
-        'date_of_transaction',
-        'sex',
-        'age',
-        'region_of_residence',
-        'service_availed',
-        'suggestions',
-        'email',
-        'completed_survey',
-        'service_id',
-    ];
+protected $fillable = [
+    'client_type',
+    'date_of_transaction',
+    'sex',
+    'civil_status',   // <-- new
+    'age',
+    'region_of_residence',
+    'service_availed',
+    'suggestions',
+    'email',
+    'completed_survey',
+    'service_id',
+];
 
     protected $casts = [
         'date_of_transaction' => 'date',
@@ -46,9 +47,9 @@ class Respondent extends Model
             $query->where('custom_id', 'like', 'SQD%');
         });
     }
-    
+
     // ========== ADD THESE NEW METHODS ==========
-    
+
     /**
      * Check if respondent completed at least one survey question
      */
@@ -56,7 +57,7 @@ class Respondent extends Model
     {
         return $this->surveyResponses()->exists();
     }
-    
+
     /**
      * Check if respondent completed CC questions
      */
@@ -64,7 +65,7 @@ class Respondent extends Model
     {
         return $this->ccResponses()->exists();
     }
-    
+
     /**
      * Check if respondent completed SQD questions
      */
@@ -72,7 +73,7 @@ class Respondent extends Model
     {
         return $this->sqdResponses()->exists();
     }
-    
+
     /**
      * Count how many survey questions were answered
      */
@@ -80,7 +81,7 @@ class Respondent extends Model
     {
         return $this->surveyResponses()->count();
     }
-    
+
     /**
      * Get all respondents who completed at least one survey question
      */
@@ -88,7 +89,7 @@ class Respondent extends Model
     {
         return $query->whereHas('surveyResponses');
     }
-    
+
     /**
      * Get all respondents who completed CC questions
      */
@@ -96,7 +97,7 @@ class Respondent extends Model
     {
         return $query->whereHas('ccResponses');
     }
-    
+
     /**
      * Get all respondents who completed SQD questions
      */

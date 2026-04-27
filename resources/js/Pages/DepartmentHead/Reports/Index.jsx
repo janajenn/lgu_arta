@@ -93,12 +93,20 @@ export default function ReportsIndex({ totalClientsSurveyed, totalTransactions }
 
             <div className="space-y-8">
                 {/* Page Header */}
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
-                    <p className="mt-2 text-gray-600">
-                        Comprehensive analytics and insights across all departments
-                    </p>
-                </div>
+
+<div className="flex justify-between items-center">
+    <div>
+        <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
+        <p className="mt-2 text-gray-600">Comprehensive analytics and insights across all departments</p>
+    </div>
+    <Link
+        href={route('department-head.reports.preview')}
+        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
+    >
+        <DocumentTextIcon className="h-5 w-5 mr-2" />
+        Preview Report
+    </Link>
+</div>
 
                 {/* Elegant Info Banner */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 shadow-sm">

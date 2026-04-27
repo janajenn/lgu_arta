@@ -21,7 +21,7 @@ class SurveyController extends Controller
         $service = null;
         $department = null;
         $services = [];
-    
+
         if ($serviceId) {
             $service = Service::with('department')->find($serviceId);
             if ($service) {
@@ -30,12 +30,12 @@ class SurveyController extends Controller
                 $services = $department->services()->pluck('name')->toArray();
             }
         }
-    
+
         $questions = SurveyQuestion::where('is_active', true)
             ->orderBy('question_set')
             ->orderBy('question_number')
             ->get();
-    
+
         return Inertia::render('Survey/Create', [
             'firstSetQuestions' => $questions->where('question_set', 'first')->values(),
             'secondSetQuestions' => $questions->where('question_set', 'second')->values(),
@@ -44,7 +44,7 @@ class SurveyController extends Controller
             'services' => $services,
         ]);
     }
-    
+
 /**
  * Record a transaction without survey
  */
@@ -75,23 +75,24 @@ public function store(StoreSurveyResponseRequest $request)
 
     try {
         $respondent = Respondent::create([
-            'client_type' => $validated['respondent']['client_type'],
-            'date_of_transaction' => $validated['respondent']['date_of_transaction'],
-            'sex' => $validated['respondent']['sex'],
-            'age' => $validated['respondent']['age'],
-            'region_of_residence' => $validated['respondent']['region_of_residence'],
-            'service_id' => $validated['service_id'], // ← use validated
-            'service_availed' => $validated['respondent']['service_availed'], // keep for denormalization
-            'suggestions' => $validated['suggestions'] ?? '',
-            'email' => $validated['email'] ?? '',
-            'completed_survey' => true,
-        ]);
-            
+    'client_type' => $validated['respondent']['client_type'],
+    'date_of_transaction' => $validated['respondent']['date_of_transaction'],
+    'sex' => $validated['respondent']['sex'],
+    'civil_status' => $validated['respondent']['civil_status'] ?? null,  // <-- new
+    'age' => $validated['respondent']['age'],
+    'region_of_residence' => $validated['respondent']['region_of_residence'],
+    'service_id' => $validated['service_id'],
+    'service_availed' => $validated['respondent']['service_availed'],
+    'suggestions' => $validated['suggestions'] ?? '',
+    'email' => $validated['email'] ?? '',
+    'completed_survey' => true,
+]);
+
             // Get all questions to map custom_id to database id
             $questions = SurveyQuestion::whereIn('custom_id', array_keys($request->input('responses', [])))
                 ->pluck('id', 'custom_id')
                 ->toArray();
-            
+
             // Prepare responses for bulk insert
             $responses = [];
             foreach ($request->input('responses', []) as $customId => $responseData) {
@@ -105,16 +106,16 @@ public function store(StoreSurveyResponseRequest $request)
                     ];
                 }
             }
-            
+
             // Bulk insert responses
             if (!empty($responses)) {
                 SurveyResponse::insert($responses);
             }
-            
+
             DB::commit();
-            
+
             return redirect()->route('survey.thank-you');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors(['error' => 'Failed to save survey. Please try again.']);

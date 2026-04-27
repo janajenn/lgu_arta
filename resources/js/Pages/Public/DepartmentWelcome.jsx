@@ -6,25 +6,25 @@ import { BuildingOfficeIcon, DocumentTextIcon, GlobeAltIcon, ClipboardDocumentCh
 const themes = [
     {
         name: 'blue',
-        primary: '#3B82F6', // blue-500
-        secondary: '#1E3A8A', // blue-900
-        gradientFrom: '#2563EB', // blue-600
-        gradientTo: '#1E40AF', // blue-800
-        blob1: '#3B82F6', // blue-500
-        blob2: '#60A5FA', // blue-400
-        blob3: '#2563EB', // blue-600
-        buttonFrom: '#1E40AF', // blue-800
-        buttonTo: '#1E3A8A', // blue-900
-        ring: '#DBEAFE', // blue-100
-        border: '#BFDBFE', // blue-200
-        lightBg: '#EFF6FF', // blue-50
+        primary: '#3B82F6',
+        secondary: '#1E3A8A',
+        gradientFrom: '#2563EB',
+        gradientTo: '#1E40AF',
+        blob1: '#3B82F6',
+        blob2: '#60A5FA',
+        blob3: '#2563EB',
+        buttonFrom: '#1E40AF',
+        buttonTo: '#1E3A8A',
+        ring: '#DBEAFE',
+        border: '#BFDBFE',
+        lightBg: '#EFF6FF',
     },
     {
         name: 'green',
-        primary: '#10B981', // green-500
-        secondary: '#064E3B', // green-900
-        gradientFrom: '#059669', // green-600
-        gradientTo: '#047857', // green-700
+        primary: '#10B981',
+        secondary: '#064E3B',
+        gradientFrom: '#059669',
+        gradientTo: '#047857',
         blob1: '#10B981',
         blob2: '#34D399',
         blob3: '#059669',
@@ -36,10 +36,10 @@ const themes = [
     },
     {
         name: 'purple',
-        primary: '#8B5CF6', // purple-500
-        secondary: '#4C1D95', // purple-900
-        gradientFrom: '#7C3AED', // purple-600
-        gradientTo: '#5B21B6', // purple-800
+        primary: '#8B5CF6',
+        secondary: '#4C1D95',
+        gradientFrom: '#7C3AED',
+        gradientTo: '#5B21B6',
         blob1: '#8B5CF6',
         blob2: '#A78BFA',
         blob3: '#7C3AED',
@@ -51,10 +51,10 @@ const themes = [
     },
     {
         name: 'orange',
-        primary: '#F97316', // orange-500
-        secondary: '#7C2D12', // orange-900
-        gradientFrom: '#EA580C', // orange-600
-        gradientTo: '#C2410C', // orange-700
+        primary: '#F97316',
+        secondary: '#7C2D12',
+        gradientFrom: '#EA580C',
+        gradientTo: '#C2410C',
         blob1: '#F97316',
         blob2: '#FB923C',
         blob3: '#EA580C',
@@ -66,10 +66,10 @@ const themes = [
     },
     {
         name: 'red',
-        primary: '#EF4444', // red-500
-        secondary: '#7F1D1D', // red-900
-        gradientFrom: '#DC2626', // red-600
-        gradientTo: '#B91C1C', // red-700
+        primary: '#EF4444',
+        secondary: '#7F1D1D',
+        gradientFrom: '#DC2626',
+        gradientTo: '#B91C1C',
         blob1: '#EF4444',
         blob2: '#F87171',
         blob3: '#DC2626',
@@ -81,10 +81,10 @@ const themes = [
     },
     {
         name: 'teal',
-        primary: '#14B8A6', // teal-500
-        secondary: '#115E59', // teal-900
-        gradientFrom: '#0D9488', // teal-600
-        gradientTo: '#0F766E', // teal-700
+        primary: '#14B8A6',
+        secondary: '#115E59',
+        gradientFrom: '#0D9488',
+        gradientTo: '#0F766E',
         blob1: '#14B8A6',
         blob2: '#2DD4BF',
         blob3: '#0D9488',
@@ -103,7 +103,7 @@ export default function DepartmentWelcome({ department }) {
         service_id: '',
     });
 
-    // Pick a theme based on department id (modulo number of themes)
+    // Pick a theme based on department id
     const themeIndex = (department.id - 1) % themes.length;
     const theme = themes[themeIndex];
 
@@ -116,6 +116,10 @@ export default function DepartmentWelcome({ department }) {
         BriefcaseIcon,
     ];
 
+    const internalServices = department.services.filter(s => s.category === 'internal');
+    const externalServices = department.services.filter(s => s.category === 'external');
+    const otherServices = department.services.filter(s => s.category !== 'internal' && s.category !== 'external');
+
     const handleServiceSelect = (service) => {
         setSelectedService(service);
         setData('service_id', service.id);
@@ -126,9 +130,7 @@ export default function DepartmentWelcome({ department }) {
             alert('Please select a service first.');
             return;
         }
-
         setIsSubmitting(true);
-
         if (withSurvey) {
             router.get(route('survey.create'), { service_id: selectedService.id });
         } else {
@@ -142,11 +144,70 @@ export default function DepartmentWelcome({ department }) {
         }
     };
 
+    const renderServiceGroup = (services, groupName) => {
+        if (services.length === 0) return null;
+        return (
+            <div className="mb-10">
+                <div className="flex items-center gap-2 mb-5">
+                    <div className="w-1 h-6 rounded-full" style={{ backgroundColor: theme.primary }} />
+                    <h3 className="text-lg font-semibold text-gray-800">{groupName} Services</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {services.map((service, idx) => {
+                        const IconComponent = serviceIcons[idx % serviceIcons.length];
+                        const isSelected = selectedService?.id === service.id;
+                        return (
+                            <button
+                                key={service.id}
+                                onClick={() => handleServiceSelect(service)}
+                                className={`group relative p-5 rounded-xl border transition-all duration-200 text-left
+                                    ${isSelected
+                                        ? 'border-transparent shadow-lg'
+                                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                                    }`}
+                                style={{
+                                    backgroundColor: isSelected ? theme.lightBg : 'white',
+                                    borderColor: isSelected ? theme.primary : undefined,
+                                }}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                        isSelected ? 'text-white' : 'text-gray-500'
+                                    }`}
+                                    style={{ backgroundColor: isSelected ? theme.primary : theme.lightBg }}>
+                                        <IconComponent className="h-5 w-5" style={{ color: isSelected ? 'white' : theme.primary }} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className={`text-base font-semibold mb-1 ${isSelected ? 'text-gray-900' : 'text-gray-800'}`}>
+                                            {service.name}
+                                        </h4>
+                                        {service.description && (
+                                            <p className="text-sm text-gray-500 line-clamp-2">{service.description}</p>
+                                        )}
+                                    </div>
+                                    {isSelected && (
+                                        <svg className="h-5 w-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                            style={{ color: theme.primary }}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    )}
+                                </div>
+                                {isSelected && (
+                                    <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ boxShadow: `0 0 0 2px ${theme.primary}` }} />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <>
             <Head title={`${department.name} Service Feedback`} />
             <div className="relative overflow-hidden min-h-screen w-full" style={{ background: `linear-gradient(to bottom right, white, ${theme.lightBg})` }}>
-                {/* Animated blobs with theme colors */}
+                {/* Animated blobs */}
                 <div className="absolute inset-0 overflow-hidden">
                     <div className="absolute -right-32 -top-32 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" style={{ backgroundColor: theme.blob1 }}></div>
                     <div className="absolute -left-32 -bottom-32 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" style={{ backgroundColor: theme.blob2 }}></div>
@@ -203,65 +264,29 @@ export default function DepartmentWelcome({ department }) {
                         {/* Service Selection Card */}
                         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden mb-12 border" style={{ borderColor: theme.border }}>
                             <div className="px-8 py-10" style={{ background: `linear-gradient(to right, ${theme.gradientFrom}, ${theme.gradientTo})` }}>
-                                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 text-center">
-                                    Step 1: Select a Service
-                                </h2>
-                                <p className="text-blue-100 text-lg text-center">
-                                    Please choose the service you availed today (Required)
-                                </p>
+                                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 text-center">Step 1: Select a Service</h2>
+                                <p className="text-white/80 text-lg text-center">Please choose the service you availed today (Required)</p>
                             </div>
 
                             <div className="p-8">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                                    {department.services.map((service, index) => {
-                                        const IconComponent = serviceIcons[index % serviceIcons.length];
-                                        return (
-                                            <button
-                                                key={service.id}
-                                                onClick={() => handleServiceSelect(service)}
-                                                className={`p-6 rounded-xl border-2 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg ${
-                                                    selectedService?.id === service.id ? 'bg-opacity-20' : ''
-                                                }`}
-                                                style={{
-                                                    borderColor: selectedService?.id === service.id ? theme.primary : theme.border,
-                                                    backgroundColor: selectedService?.id === service.id ? theme.lightBg : 'white',
-                                                }}
-                                            >
-                                                <div className="flex flex-col items-center text-center">
-                                                    <div className={`h-16 w-16 rounded-full flex items-center justify-center mb-4 ${
-                                                        selectedService?.id === service.id ? 'bg-opacity-100' : 'bg-gray-100'
-                                                    }`} style={{ backgroundColor: selectedService?.id === service.id ? theme.lightBg : undefined }}>
-                                                        <IconComponent className="h-8 w-8" style={{ color: selectedService?.id === service.id ? theme.primary : '#6B7280' }} />
-                                                    </div>
-                                                    <h3 className={`text-lg font-bold mb-2 ${selectedService?.id === service.id ? '' : 'text-gray-800'}`} style={{ color: selectedService?.id === service.id ? theme.primary : undefined }}>
-                                                        {service.name}
-                                                    </h3>
-                                                    {service.description && (
-                                                        <p className="text-sm text-gray-600">{service.description}</p>
-                                                    )}
-                                                    {selectedService?.id === service.id && (
-                                                        <div className="mt-4 h-8 w-8 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.primary }}>
-                                                            <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                                {renderServiceGroup(internalServices, 'Internal')}
+                                {renderServiceGroup(externalServices, 'External')}
+                                {renderServiceGroup(otherServices, 'Other')}
+
+                                {department.services.length === 0 && (
+                                    <div className="text-center py-8 text-gray-500">No services available for this department.</div>
+                                )}
 
                                 {selectedService && (
-                                    <div className="mb-6 p-4 border rounded-xl" style={{ backgroundColor: theme.lightBg, borderColor: theme.border }}>
+                                    <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: theme.lightBg, borderColor: theme.border }}>
                                         <div className="flex items-center justify-between">
-                                            <span className="font-medium" style={{ color: theme.secondary }}>Selected Service:</span>
-                                            <span className="font-bold" style={{ color: theme.primary }}>{selectedService.name}</span>
+                                            <span className="font-medium text-gray-700">Selected Service:</span>
+                                            <span className="font-semibold" style={{ color: theme.primary }}>{selectedService.name}</span>
                                         </div>
                                     </div>
                                 )}
 
-                                {!selectedService && (
+                                {!selectedService && department.services.length > 0 && (
                                     <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
                                         <p className="text-yellow-700 font-medium">Please select a service to continue</p>
                                     </div>

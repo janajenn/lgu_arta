@@ -75,7 +75,7 @@ class DashboardController extends Controller
         // Sorting and pagination
         $sortField = $request->get('sort', 'created_at');
         $sortDirection = $request->get('direction', 'desc');
-        $responses = $query->orderBy($sortField, $sortDirection)->paginate(15);
+        $responses = $query->orderBy($sortField, $sortDirection)->paginate(10);
 
         // Totals
         $totalTransactions = Respondent::whereHas('service', fn($q) => $q->where('department_id', $departmentId))->count();

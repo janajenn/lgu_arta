@@ -187,6 +187,11 @@ Route::get('/department-head/analytics/{department}', [\App\Http\Controllers\Dep
     Route::get('/department-head/track-departments', [\App\Http\Controllers\DepartmentHead\TrackingController::class, 'index'])
     ->name('department-head.track-departments');
 
+
+
+    // In routes/web.php inside the authenticated and check.account.type group
+    Route::get('/department-head/reports/preview', [ReportsController::class, 'preview'])->name('department-head.reports.preview');
+
     });
 
 

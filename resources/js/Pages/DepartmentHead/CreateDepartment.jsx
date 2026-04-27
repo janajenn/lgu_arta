@@ -1,4 +1,4 @@
-import { useForm, usePage } from '@inertiajs/react';
+import { useForm, usePage, router } from '@inertiajs/react'; // add router import
 import {
     BuildingOfficeIcon,
     UserIcon,
@@ -16,7 +16,7 @@ import Swal from 'sweetalert2';
 
 export default function CreateDepartment() {
     const { flash } = usePage().props;
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         department_name: '',
         department_description: '',
         logo: null,
@@ -39,15 +39,12 @@ export default function CreateDepartment() {
         const handleScroll = () => {
             if (servicesCardRef.current) {
                 const rect = servicesCardRef.current.getBoundingClientRect();
-                // Show button when the top of the card is above 150px from the top and bottom is still above 0
                 const isVisible = rect.top < 150 && rect.bottom > 0;
                 setShowFloatingAddButton(isVisible);
             }
         };
-
         window.addEventListener('scroll', handleScroll);
         handleScroll();
-
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
@@ -88,6 +85,19 @@ export default function CreateDepartment() {
         e.preventDefault();
         post(route('department-head.departments.store'), {
             forceFormData: true,
+            onSuccess: () => {
+                // Show success alert
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Department created successfully.',
+                    timer: 2000,
+                    showConfirmButton: false,
+                }).then(() => {
+                    // Redirect to departments index after alert closes
+                    router.get(route('department-head.departments.index'));
+                });
+            },
             onError: () => {
                 Swal.fire({
                     icon: 'error',
@@ -141,7 +151,7 @@ export default function CreateDepartment() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Descriptions <span className="text-gray-400">(optional)</span>
+                                        Description <span className="text-gray-400">(optional)</span>
                                     </label>
                                     <textarea
                                         value={data.department_description}
