@@ -200,9 +200,16 @@ Route::get('/department-head/analytics/{department}', [\App\Http\Controllers\Dep
     Route::get('/department-head/reports/preview', [ReportsController::class, 'preview'])->name('department-head.reports.preview');
 
 
+    Route::get('/department-head/reports/preview/pdf', [ReportsController::class, 'downloadPdf'])
+    ->name('department-head.reports.preview.pdf');
+
+
 Route::get('/department-head/kiosk', [KioskController::class, 'index'])->name('department-head.kiosk.index');
 Route::post('/department-head/kiosk/activate', [KioskController::class, 'activate'])->name('department-head.kiosk.activate');
 Route::post('/department-head/kiosk/deactivate', [KioskController::class, 'deactivate'])->name('department-head.kiosk.deactivate');
+
+
+
 
 
     });

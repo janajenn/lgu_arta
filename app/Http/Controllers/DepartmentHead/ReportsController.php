@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Respondent;
 use App\Models\ReportNote;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Service;
 use App\Models\Department;
@@ -995,10 +996,9 @@ public function preview(Request $request)
         ->orderBy('question_number')
         ->get();
 
-    // LGU logo path – adjust according to your actual storage location
-    $logoPath = config('app.lgu_logo', '/images/opol_logo.png');
-    $fullPath = public_path($logoPath);
-    $lguLogo = file_exists($fullPath) ? asset($logoPath) : asset('/images/placeholder-logo.png');
+    // Get logo – URL for React preview
+    $logo = $this->getLogo();
+    $lguLogo = $logo['url'];
 
     // Load existing notes for the current user and 'preview' report type
     $initialNotes = ReportNote::where('user_id', auth()->id())
@@ -1456,5 +1456,72 @@ public function saveNotes(Request $request)
    return redirect()->back()->with('success', 'Notes saved successfully.');
 }
 
+
+public function downloadPdf(Request $request)
+{
+    if (!$request->user() || !$request->user()->is_hr_department) {
+        abort(403, 'Unauthorized. Only HR can view reports.');
+    }
+
+    // Reuse data collection (same as preview method)
+    $data = $this->getAllReportData($request);
+
+    // Load saved notes for the current user
+    $initialNotes = ReportNote::where('user_id', auth()->id())
+        ->where('report_type', 'preview')
+        ->get()
+        ->pluck('content', 'section_key')
+        ->toArray();
+
+    // Get logo – base64 for PDF (safe for DomPDF)
+    $logo = $this->getLogo();
+    $lguLogo = $logo['base64'];
+
+    // Add additional data needed by blade
+    $data['lguLogo'] = $lguLogo;
+    $data['firstSetQuestions'] = SurveyQuestion::where('question_set', 'first')->where('is_active', true)->orderBy('question_number')->get();
+    $data['secondSetQuestions'] = SurveyQuestion::where('question_set', 'second')->where('is_active', true)->orderBy('question_number')->get();
+    $data['notes'] = $initialNotes;
+
+    // Compute unusedServices with category included
+    $unusedServices = [];
+    foreach (['internal', 'external'] as $cat) {
+        foreach ($data['serviceSummaryData']['servicesByCategory'][$cat] ?? [] as $service) {
+            if ($service['responses'] == 0) {
+                $service['category'] = $cat;
+                $unusedServices[] = $service;
+            }
+        }
+    }
+    $data['unusedServices'] = $unusedServices;
+
+    // Generate PDF
+    $pdf = Pdf::loadView('reports.preview', $data);
+    $pdf->setPaper('A4', 'portrait');
+
+    return $pdf->download('CSM_Report_' . date('Y-m-d') . '.pdf');
+}
+
+/**
+ * Get logo URL for web (React) and base64 for PDF.
+ */
+private function getLogo()
+{
+    $logoPath = config('app.lgu_logo', '/images/opol_logo.png');
+    $fullPath = public_path($logoPath);
+
+    if (file_exists($fullPath)) {
+        // For React preview: URL
+        $url = asset($logoPath);
+        // For PDF: base64 encoded image
+        $type = pathinfo($fullPath, PATHINFO_EXTENSION);
+        $data = file_get_contents($fullPath);
+        $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+        return ['url' => $url, 'base64' => $base64];
+    }
+
+    // Fallback
+    return ['url' => asset('/images/placeholder-logo.png'), 'base64' => null];
+}
 
 }

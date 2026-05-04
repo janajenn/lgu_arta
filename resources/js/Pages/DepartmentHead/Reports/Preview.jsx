@@ -115,12 +115,12 @@ export default function Preview({
                             <InformationCircleIcon className="h-5 w-5 mr-1" />
                             Formulas
                         </button>
-                        <button
-                            onClick={() => window.print()}
-                            className="px-4 py-2 bg-gray-200 rounded-lg text-gray-700 hover:bg-gray-300"
-                        >
-                            Print / Save as PDF
-                        </button>
+                       <button
+    onClick={() => window.open(route('department-head.reports.preview.pdf'), '_blank')}
+    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+>
+    Download PDF
+</button>
                     </div>
                 </div>
 
