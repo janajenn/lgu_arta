@@ -11,6 +11,7 @@ import {
     ArrowRightOnRectangleIcon,
     Bars3Icon,
     XMarkIcon,
+    DevicePhoneMobileIcon
 } from '@heroicons/react/24/outline';
 
 export default function DepartmentHeadLayout({ children, title = null }) {
@@ -73,6 +74,12 @@ export default function DepartmentHeadLayout({ children, title = null }) {
                 : route('department-head.analytics'),
             icon: ChartBarIcon,
         },
+
+{
+    name: 'Kiosk Management',
+    href: route('department-head.kiosk.index'),  // use the new name
+    icon: DevicePhoneMobileIcon,
+}
     ];
 
     // Add HR‑specific items only when NOT in viewing mode

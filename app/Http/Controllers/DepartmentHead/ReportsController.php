@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Respondent;
+use App\Models\ReportNote;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Service;
 use App\Models\Department;
 use App\Models\User;
@@ -974,10 +976,6 @@ public function serviceRatings(Request $request)
 
 
 
-
-/**
- * Preview all reports combined.
- */
 public function preview(Request $request)
 {
     if (!$request->user() || !$request->user()->is_hr_department) {
@@ -985,6 +983,35 @@ public function preview(Request $request)
     }
 
     $data = $this->getAllReportData($request);
+
+    // Fetch active survey questions
+    $firstSetQuestions = SurveyQuestion::where('question_set', 'first')
+        ->where('is_active', true)
+        ->orderBy('question_number')
+        ->get();
+
+    $secondSetQuestions = SurveyQuestion::where('question_set', 'second')
+        ->where('is_active', true)
+        ->orderBy('question_number')
+        ->get();
+
+    // LGU logo path – adjust according to your actual storage location
+    $logoPath = config('app.lgu_logo', '/images/opol_logo.png');
+    $fullPath = public_path($logoPath);
+    $lguLogo = file_exists($fullPath) ? asset($logoPath) : asset('/images/placeholder-logo.png');
+
+    // Load existing notes for the current user and 'preview' report type
+    $initialNotes = ReportNote::where('user_id', auth()->id())
+        ->where('report_type', 'preview')
+        ->get()
+        ->pluck('content', 'section_key')
+        ->toArray();
+
+    // Merge everything into the data array
+    $data['firstSetQuestions'] = $firstSetQuestions;
+    $data['secondSetQuestions'] = $secondSetQuestions;
+    $data['lguLogo'] = $lguLogo;
+    $data['initialNotes'] = $initialNotes;
 
     return Inertia::render('DepartmentHead/Reports/Preview', $data);
 }
@@ -1391,5 +1418,43 @@ private function getRegionInsights($regions, $total)
     }
     return $insights;
 }
+
+
+/**
+ * Get saved notes for the current user and report type.
+ */
+public function getNotes(Request $request)
+{
+    $notes = ReportNote::where('user_id', auth()->id())
+        ->where('report_type', $request->report_type)
+        ->get()
+        ->pluck('content', 'section_key');
+    return response()->json($notes);
+}
+
+/**
+ * Save all notes (bulk) – called from the frontend Preview component.
+ */
+public function saveNotes(Request $request)
+{
+    $request->validate([
+        'notes' => 'required|array',
+        'report_type' => 'required|string'
+    ]);
+
+    foreach ($request->notes as $key => $content) {
+        ReportNote::updateOrCreate(
+            [
+                'user_id' => auth()->id(),
+                'report_type' => $request->report_type,
+                'section_key' => $key,
+            ],
+            ['content' => $content]
+        );
+    }
+
+   return redirect()->back()->with('success', 'Notes saved successfully.');
+}
+
 
 }

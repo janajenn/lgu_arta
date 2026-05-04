@@ -1,5 +1,6 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router, useForm, Link } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { BuildingOfficeIcon, DocumentTextIcon, GlobeAltIcon, ClipboardDocumentCheckIcon, CalendarIcon, UserGroupIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 
 // Define color themes (each with primary, secondary, gradient, blob colors)
@@ -202,6 +203,90 @@ export default function DepartmentWelcome({ department }) {
             </div>
         );
     };
+
+    const [kioskActive, setKioskActive] = useState(null);
+    const [checking, setChecking] = useState(true);
+
+    useEffect(() => {
+        const token = localStorage.getItem('kiosk_token');
+        if (!token) {
+            setKioskActive(false);
+            setChecking(false);
+            return;
+        }
+        axios.get(route('kiosk.status'), {
+            params: { department_id: department.id, token: token }
+        }).then(res => {
+            setKioskActive(res.data.active);
+        }).catch(() => setKioskActive(false))
+          .finally(() => setChecking(false));
+    }, [department.id]);
+
+    if (checking) {
+        return <div className="text-center py-20">Loading...</div>;
+    }
+
+    if (!kioskActive) {
+    return (
+        <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 to-slate-100">
+            <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden text-center mx-auto">
+                <div className="p-6 sm:p-8">
+                    {/* Illustration */}
+                    <div className="flex justify-center mb-6">
+                        <img
+                            src="/images/undraw_notify_drs8.svg"
+                            alt="Kiosk inactive"
+                            className="w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 object-contain"
+                        />
+                    </div>
+
+                    {/* Heading */}
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+                        Survey Kiosk Inactive
+                    </h2>
+
+                    {/* Description */}
+                    <p className="text-sm sm:text-base text-gray-500 mb-6">
+                        The survey kiosk for this department is currently inactive.
+                    </p>
+
+                    {/* Info box */}
+                    <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg text-left mb-8">
+                        <p className="text-sm text-amber-800 flex items-start gap-2">
+                            <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            Please ask a staff member to start a kiosk session.
+                        </p>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Link
+                            href={route('public.departments')}
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Back to Departments
+                        </Link>
+                        <a
+                            href="/login"
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Staff Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 
     return (
         <>

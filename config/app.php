@@ -20,6 +20,8 @@ return [
 
     'lgu_name' => env('LGU_NAME', 'LGU Opol'),
 
+    'lgu_logo' => env('LGU_LOGO', '/images/opol_logo.png'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

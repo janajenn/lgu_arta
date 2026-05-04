@@ -14,6 +14,9 @@ use App\Http\Controllers\DepartmentHead\ReportsController;
 use App\Http\Controllers\Admin\AdminReportsController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Auth\HrLoginController;
+use App\Http\Controllers\DepartmentHead\AnalyticsController;
+use App\Http\Controllers\DepartmentHead\KioskController;
+use App\Http\Controllers\Admin\AdminTrackingController;
 use  App\Http\Controllers\DepartmentHead\TrackingController;
 
 // Public department selection (landing page)
@@ -95,6 +98,10 @@ Route::middleware(['auth'])->group(function () {
     // Logout
     Route::post('logout', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
+
+
+        Route::get('/reports/notes', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'getNotes'])->name('reports.notes.get');
+Route::post('/reports/notes', [\App\Http\Controllers\DepartmentHead\ReportsController::class, 'saveNotes'])->name('reports.notes.save');
 
     // 🔐 PROTECTED ROUTES - Check account type before accessing
     Route::middleware(['check.account.type'])->group(function () {
@@ -192,9 +199,15 @@ Route::get('/department-head/analytics/{department}', [\App\Http\Controllers\Dep
     // In routes/web.php inside the authenticated and check.account.type group
     Route::get('/department-head/reports/preview', [ReportsController::class, 'preview'])->name('department-head.reports.preview');
 
+
+Route::get('/department-head/kiosk', [KioskController::class, 'index'])->name('department-head.kiosk.index');
+Route::post('/department-head/kiosk/activate', [KioskController::class, 'activate'])->name('department-head.kiosk.activate');
+Route::post('/department-head/kiosk/deactivate', [KioskController::class, 'deactivate'])->name('department-head.kiosk.deactivate');
+
+
     });
 
-
+Route::get('/kiosk/status', [KioskController::class, 'status'])->name('kiosk.status');
 
 
 
@@ -227,6 +240,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/reports/region-distribution', [AdminReportsController::class, 'regionDistribution'])->name('reports.region-distribution');
     Route::get('/reports/service-summary', [AdminReportsController::class, 'serviceSummary'])->name('reports.service-summary');
     Route::get('/reports/cc-sqd-summary', [AdminReportsController::class, 'ccSqdSummary'])->name('reports.cc-sqd-summary');
+
+     Route::get('/tracking', [AdminTrackingController::class, 'index'])->name('tracking');
 
   Route::get('/reports/summary-of-result', [App\Http\Controllers\Admin\AdminReportsController::class, 'summaryOfResult'])
     ->name('reports.summary-of-result');

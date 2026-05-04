@@ -1,6 +1,6 @@
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
-import { HomeIcon, ChartBarIcon, ArrowLeftOnRectangleIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, ChartBarIcon, ArrowLeftOnRectangleIcon, Bars3Icon, XMarkIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 
 import Swal from 'sweetalert2';
 
@@ -47,6 +47,7 @@ export default function AdminLayout({ children, title = null }) {
     const navigation = [
         { name: 'Dashboard', href: route('admin.dashboard'), icon: HomeIcon },
         { name: 'Reports', href: route('admin.reports.index'), icon: ChartBarIcon },
+        { name: 'Tracking', href: route('admin.tracking'), icon: BuildingOfficeIcon },
     ];
 
     const navWithActive = navigation.map(item => ({
